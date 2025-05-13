@@ -1,6 +1,6 @@
-package org.jeff.web.http.handlers;
+package org.jeff.web.server.aio_handlers;
 
-import org.jeff.web.http.Session;
+import org.jeff.web.Session;
 
 import java.nio.channels.CompletionHandler;
 

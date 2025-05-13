@@ -1,8 +1,7 @@
-package org.jeff.web.http;
+package org.jeff.web.parse;
 
 public enum RequestParserState
 {
     Completed,
     Continue,
-    Error,
 }

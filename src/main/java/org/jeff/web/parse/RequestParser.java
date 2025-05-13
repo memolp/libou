@@ -1,12 +1,16 @@
-package org.jeff.web.http;
+package org.jeff.web.parse;
 
 import org.jeff.core.BinaryBuffer;
 import org.jeff.core.DynamicBuffer;
 import org.jeff.core.ReadableByteBuffer;
+import org.jeff.web.Request;
+import org.jeff.web.multipart.FileField;
 
+import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 public class RequestParser
@@ -20,12 +24,17 @@ public class RequestParser
 
     private BinaryBuffer _cache_buffer = new BinaryBuffer(1024);
     private RequestParserFSM _state = RequestParserFSM.METHOD;
-    private Request _request = new Request();
+    private Request _request = null;
     private DynamicBuffer _body_buffer = null;
     private int _wait_body_size = -1;
     private boolean _chunked_body = false;
 
-    public RequestParserState parser(ByteBuffer byteBuffer)
+    public RequestParser(Request r)
+    {
+        this._request = r;
+    }
+
+    public RequestParserState parser(ByteBuffer byteBuffer) throws RequestParseException
     {
         if(_state != RequestParserFSM.BODY)
             _cache_buffer.put(byteBuffer.array(), 0, byteBuffer.remaining());
@@ -33,7 +42,8 @@ public class RequestParser
             _body_buffer.put(byteBuffer.array(), 0, byteBuffer.remaining());
         return this.http_fsm_parser();
     }
-    private RequestParserState http_fsm_parser()
+
+    private RequestParserState http_fsm_parser() throws RequestParseException
     {
         // 解析HTTP的请求内容
         while(_cache_buffer.hasRemaining())
@@ -43,7 +53,10 @@ public class RequestParser
                 String line = read_line(this._cache_buffer);
                 if (line == null) return RequestParserState.Continue;
                 String[] args = line.split(" ");
-                if (args.length < 2) return RequestParserState.Error;
+                if  (args.length < 2)
+                {
+                    throw new RequestParseException("解析HTTP方法异常, 原始:%s", line);
+                }
                 _request.method = args[0].trim().toUpperCase();
                 _request.path = args[1].trim();
                 if (args.length == 3) {
@@ -65,8 +78,11 @@ public class RequestParser
                     _state = RequestParserFSM.BODY;
                     continue;
                 }
-                String[] args = line.split(":");
-                if(args.length <2) return RequestParserState.Error;
+                String[] args = line.split(":", 2);
+                if(args.length <2)
+                {
+                    throw new RequestParseException("解析HTTP头异常, 原始:%s", line);
+                }
                 _request.headers.put(args[0].trim().toUpperCase(), args[1].trim());
             }else if(_state == RequestParserFSM.BODY)  // 读取body内容 只有POST方法有
             {
@@ -93,7 +109,7 @@ public class RequestParser
                                 continue;  // 设置标记，然后立即继续读取
                             } else  // 必须二选一，那么HTTP/0.9 和 HTTP1.0 可能没法POST东西 , 如需支持那么由于无法获知长度结果无法预测
                             {
-                                return RequestParserState.Error;
+                                throw new RequestParseException("当前服务器版本不支持不提供长度的请求");
                             }
                         } else {
                             _wait_body_size = Integer.parseInt(content_length);
@@ -119,34 +135,41 @@ public class RequestParser
      */
     private String read_line(ReadableByteBuffer byteBuffer)
     {
-        StringBuilder sb = new StringBuilder();
+        ByteArrayOutputStream sb = new ByteArrayOutputStream();
         byteBuffer.mark();  // 先记录，防止读取不全的时候没法恢复
         while (byteBuffer.hasRemaining())
         {
             byte b = byteBuffer.get();
-            if(b == '\r' && byteBuffer.hasRemaining())
+            if(b == '\r')
             {
-                byte c = byteBuffer.get();
-                if(c == '\n') return sb.toString();  // 遇到\r\n就返回
-                sb.append(b);
-                sb.append(c);
-            }
+                if(byteBuffer.hasRemaining())
+                {
+                    byte c = byteBuffer.get();
+                    if (c == '\n') return sb.toString();  // 遇到\r\n就返回
+                    sb.write(b);
+                    sb.write(c);
+                }else
+                {
+                    break;
+                }
+            }else
+                sb.write(b);
         }
         byteBuffer.reset();
         return null;
     }
 
-    private RequestParserState parse_request_params()
+    private RequestParserState parse_request_params() throws RequestParseException
     {
         // 先把URL里面的参数记录下来
-        String[] url_params = this._request.path.split("\\?");
+        String[] url_params = this._request.path.split("\\?", 2);
         if(url_params.length > 1)
         {
             try {
                 this._request.path = url_params[0];
                 this.parse_url_params(url_params[1]);
             } catch (UnsupportedEncodingException e) {
-                return RequestParserState.Error;
+                throw new RequestParseException("解析URL里面的参数异常，原始:%s", url_params[1]);
             }
         }
         if(_request.method.equals("POST"))
@@ -165,7 +188,7 @@ public class RequestParser
                     {
                         this.parse_url_params(url_body);
                     } catch (UnsupportedEncodingException e) {
-                        return RequestParserState.Error;
+                        throw new RequestParseException("解析Body里面的参数错误，原始:%s", url_body);
                     }
                 }
                 return RequestParserState.Completed;
@@ -181,8 +204,9 @@ public class RequestParser
                         break;
                     }
                 }
-                if(boundary == null) return RequestParserState.Error; // 没有分割符定义
-                // TODO
+                if(boundary == null)
+                    throw new RequestParseException("multipart/form-data格式请求没有携带boundary");
+                this.multipart_parser(boundary);
             }else
             {
                 // 其他格式body默认不解析
@@ -192,7 +216,7 @@ public class RequestParser
         {
             return RequestParserState.Completed;
         }
-        return RequestParserState.Error;
+        throw new RequestParseException("未知的解析参数错误");
     }
 
     private void parse_url_params(String url) throws UnsupportedEncodingException
@@ -204,11 +228,138 @@ public class RequestParser
             if(key_value.length != 2) continue;
             String key = URLDecoder.decode(key_value[0], "UTF-8");
             String value = URLDecoder.decode(key_value[1], "UTF-8");
-            if(!this._request.params.containsKey(key))
+            this.put_request_params(key, value);
+        }
+    }
+
+    private void put_request_params(String key, Object value)
+    {
+        if(!this._request.params.containsKey(key))
+        {
+            this._request.params.put(key, new LinkedList<Object>());
+        }
+        this._request.params.get(key).add(value);
+    }
+
+    private String _boundary;
+    private String _end_boundary;
+    private void multipart_parser(String boundary)
+    {
+        this._boundary = "--" + boundary;
+        this._end_boundary = "--" + boundary + "--";
+        byte[] _bytes_boundary = this._boundary.getBytes();
+        while (true)
+        {
+            if(!this.parse_field(_bytes_boundary)) break;
+        }
+    }
+
+    private boolean parse_field(byte[] _bytes_boundary)
+    {
+        String line = this.read_line(this._body_buffer);
+        if(line == null || !line.startsWith(this._boundary)) return false;  // 格式异常
+        if(line.equals(this._end_boundary)) return false;  // 已读取完成
+        HashMap<String, String> headers = this.parse_headers();
+        int start_pos = this._body_buffer.remaining();  // 头读取完成后的位置
+        int end_pos = this.read_boundary_pos(_bytes_boundary);  // 读取到下一个开始的位置
+        if(end_pos == -1) return false;  // 异常
+        if(!headers.containsKey("Content-Disposition".toLowerCase())) return false; // 异常
+        String disposition = headers.get("Content-Disposition".toLowerCase());
+        if(!disposition.startsWith("form-data")) return false; // 异常
+        if(!headers.containsKey("name")) return false; // 异常
+        String name = headers.get("name");
+        int size = end_pos - start_pos;
+        if(!headers.containsKey("filename"))  // 普通数据
+        {
+            byte[] bytes = new byte[size];
+            this._body_buffer.get(bytes, 0, size);
+            String value = new String(bytes,0, size);
+            this.put_request_params(name, value.trim());
+            this._body_buffer.set_read_index(end_pos);
+            return true;
+        }
+        String filename = headers.get("filename".toLowerCase());
+        String contentType = headers.get("Content-Type".toLowerCase());
+        FileField file = new FileField(this._body_buffer, filename, contentType , start_pos, size);
+        this.put_request_params(name, file);
+        this._body_buffer.set_read_index(end_pos);
+        return true;
+    }
+
+    private HashMap<String, String> parse_headers()
+    {
+        HashMap<String, String> headers = new HashMap<>();
+        while (true)
+        {
+            String line = read_line(this._body_buffer);
+            if(line == null || line.isEmpty()) break;  // 头结束了
+            String[] pairs = line.split(":");
+            if(pairs.length != 2) continue;; // 格式不对
+            String key = pairs[0].trim();
+            String value = pairs[1].trim();
+            String[] sub_pairs = value.split(";");
+            if(sub_pairs.length == 1)
             {
-                this._request.params.put(key, new LinkedList<String>());
+                headers.put(key.toLowerCase(), value.trim());
+                continue;
             }
-            this._request.params.get(key).add(value);
+            for(String pair : pairs)
+            {
+                String[] kv = pair.split("=");
+                if(kv.length !=2) continue;
+                headers.put(kv[0].trim().toLowerCase(), kv[1].trim());
+            }
+        }
+        return headers;
+    }
+
+    /**
+     * 查找des在src的位置
+     * @param src
+     * @param des
+     * @return
+     */
+    private int indexOf(byte[] src, byte[] des)
+    {
+        for (int i = 0; i <= src.length - des.length; i++)
+        {
+            boolean match = true;
+            for (int j = 0; j < des.length; j++)
+            {
+                if (src[i + j] != des[j])
+                {
+                    match = false;
+                    break;
+                }
+            }
+            if (match)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private int read_boundary_pos(byte[] bytes_boundary)
+    {
+        int size = bytes_boundary.length;
+        byte[] temp_buff = new byte[size];
+        int temp_pos = 0;
+        int temp_length = size * 2;
+        while (true)
+        {
+            int temp_size = Math.min(temp_length, this._body_buffer.remaining());
+            this._body_buffer.get(temp_buff, temp_pos, temp_size);
+            int pos = indexOf(temp_buff, bytes_boundary);
+            if (pos == -1)
+            {
+                if(temp_size - size < 1) return -1;
+                System.arraycopy(temp_buff, 0, temp_buff, size, temp_size-size);
+                temp_pos = size;
+                temp_length = size;
+                continue;
+            }
+            return this._body_buffer.remaining() - temp_pos + pos;
         }
     }
 }

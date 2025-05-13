@@ -1,6 +1,7 @@
-package org.jeff.web.http;
+package org.jeff.web.server;
 
-import org.jeff.web.http.handlers.AcceptHandler;
+import org.jeff.web.runner.BaseRunner;
+import org.jeff.web.server.aio_handlers.AcceptHandler;
 
 import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousChannelGroup;
@@ -19,16 +20,23 @@ public class HttpServer
     private AsynchronousChannelGroup _serverGroup = null;
     private AsynchronousServerSocketChannel _serverChannel = null;
     private Logger _logger = Logger.getLogger(HttpServer.class.getName());
+    private BaseRunner _runner = null;
 
-    public HttpServer()
+    public HttpServer(BaseRunner runner)
     {
-
+        this._runner = runner;
     }
 
-    public HttpServer(String host, int port)
+    public HttpServer(BaseRunner runner, String host, int port)
     {
+        this._runner = runner;
         this.host = host;
         this.port = port;
+    }
+
+    public BaseRunner get_runner()
+    {
+        return this._runner;
     }
 
     private void init() throws Exception
@@ -38,25 +46,31 @@ public class HttpServer
         this._serverChannel = AsynchronousServerSocketChannel.open(this._serverGroup);
         this._serverChannel.bind(new InetSocketAddress(this.host, this.port));
         this._logger.info("Server started on " + this.host + ":" + this.port);
-        this._serverChannel.accept(this._serverChannel, new AcceptHandler());
     }
 
-    public void start_server(String host, int port)
+    public void doAccept()
+    {
+        this._serverChannel.accept(this, new AcceptHandler());
+    }
+
+    public void start(String host, int port)
     {
         this.host = host;
         this.port = port;
-        this.start_server();
+        this.start();
     }
 
-    public void start_server()
+    public void start()
     {
         try {
             this.init();
+            this.doAccept();
         }catch (Exception e)
         {
             this._logger.severe(e.getMessage());
         }
     }
+
 
 
 }

@@ -1,17 +1,20 @@
 package org.jeff.web;
 
-import org.jeff.web.http.HttpServer;
+import org.jeff.web.runner.BaseRunner;
 
+/**
+ * 快捷的运行
+ */
 public class Application
 {
+
     public Application()
     {
 
     }
 
-    public void start_server(String host, int port)
+    public void start(BaseRunner runner, String host, int port)
     {
-        HttpServer server = new HttpServer(host, port);
-        server.start_server(host, port);
+       // runner.start_server(host, port);
     }
 }
