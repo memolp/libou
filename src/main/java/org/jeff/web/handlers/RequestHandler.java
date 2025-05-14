@@ -2,41 +2,26 @@ package org.jeff.web.handlers;
 
 
 import org.jeff.web.Request;
-import org.jeff.web.Response;
-import org.jeff.web.Session;
+import org.jeff.web.response.Response;
+import org.jeff.web.response.ResponseBuilder;
+import org.jeff.web.router.Router;
 
 public class RequestHandler
 {
-    public Request request;
-    public Response response;
-    public Session session;
-
     public RequestHandler() {}
 
-    public void initialHandler(Request request, Session session)
+    public Response get(Request request, Router router)
     {
-        this.request = request;
-        this.session = session;
-        this.response = setupResponse();
+        return ResponseBuilder.build(403);
     }
 
-    protected Response setupResponse()
+    public Response post(Request request, Router router)
     {
-        return new Response();
+        return ResponseBuilder.build(403);
     }
 
-    public void get()
+    public Response head(Request request, Router router)
     {
-        this.response.set_status(403, "ss", "");
-    }
-
-    public void post()
-    {
-        this.response.set_status(403, "ss", "");
-    }
-
-    public void head()
-    {
-        this.response.set_status(403, "ss", "");
+        return ResponseBuilder.build(403);
     }
 }

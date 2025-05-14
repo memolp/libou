@@ -1,21 +1,16 @@
 package org.jeff.web;
 
-import org.jeff.web.handlers.RequestHandler;
 import org.jeff.web.parse.RequestParseException;
 import org.jeff.web.parse.RequestParser;
 import org.jeff.web.parse.RequestParserState;
+import org.jeff.web.response.*;
 import org.jeff.web.router.Router;
 import org.jeff.web.router.RouterChooser;
 import org.jeff.web.server.aio_handlers.ClientReadHandler;
-import org.jeff.web.server.aio_handlers.ClientWriteHandler;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.nio.channels.CompletionHandler;
 
 public class Session
 {
@@ -23,8 +18,6 @@ public class Session
     private ByteBuffer _buffer = ByteBuffer.allocate(1024);
     private RequestParser _parser = null;
     private ClientReadHandler _reader = new ClientReadHandler();
-    private Request _request = null;
-    private Response _response = null;
     private RouterChooser _router = null;
 
     public Session(AsynchronousSocketChannel client, RouterChooser router)
@@ -35,98 +28,67 @@ public class Session
 
     public void doHandle()
     {
-        this._request = new Request();
-        this._parser = new RequestParser(this._request);
+        this._parser = new RequestParser();
+        this._buffer.clear();
         _client.read(_buffer, this, _reader);
     }
 
     public void onRead(int size)
     {
-        if(size <= 0)
-        {
+        if (size <= 0) {
             this.doClose();
             return;
         }
-        try
-        {
+        try {
             this._buffer.flip();
             RequestParserState res = this._parser.parser(this._buffer);
             this._buffer.clear();
-            if(res == RequestParserState.Continue)
-            {
+            if (res == RequestParserState.Continue) {
                 _client.read(_buffer, this, _reader);
                 return;
             }
-        } catch (RequestParseException e)
-        {
+        } catch (RequestParseException e) {
             System.out.println(e.toString());
             this.doClose();
             return;
         }
-        try
-        {
-            Router router = this._router.match_route(this._request.path);
-            if(router != null)
-            {
-                this._response = router.doRequest(this, this._request);
-            }else
-            {
-                this._response = new Response(404, "Not Found", "");
+        try {
+            Request request = this._parser.request;
+            Router router = this._router.match_route(request.path);
+            if (router != null) {
+                this.send(router.doRequest(this, request));
+            } else {
+                this.send(ResponseBuilder.build(404));
             }
-        }catch (Exception e)
-        {
-            this._response = new Response(500, "Server Error", e.getMessage());
+        } catch (Exception e) {
+            this.send(ResponseBuilder.build(500).write(e.getMessage()));
         }
-        this.doResponse();
     }
 
-    private void doResponse()
+    protected void send(Response response)
     {
-        if(this._response == null)
+        if (!(response instanceof InternalResponse))
         {
             this.doClose();
             return;
         }
-        //this._response.write(this, new ClientWriteHandler());
-
-
-        StringBuilder header = new StringBuilder();
-        header.append(String.format("%s %d %s\r\n", this._response.version, this._response.status, this._response.msg));
-        for(String key : this._response.headers.keySet())
+        InternalResponse resp = (InternalResponse)response;
+        String header = resp.build_header();
+        ByteBuffer buffer = ByteBuffer.wrap(header.getBytes());
+        this._client.write(buffer, buffer, new CompletionHandler<Integer, ByteBuffer>()
         {
-            String value = this._response.headers.get(key);
-            header.append(String.format("%s: %s\r\n", key, value));
-        }
-        if(!this._response.headers.containsKey("Connection"))
-        {
-            header.append("Connection: close");
-        }
-        if(!this._response.headers.containsKey("Content-Type"))
-        {
-            header.append("Content-Type: text/plain; charset=UTF-8\r\n");
-        }
-        if(!this._response.headers.containsKey("Date"))
-        {
-            header.append(String.format("Date: %s\r\n",new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z").format(new Date())));
-        }
-        if(!this._response.headers.containsKey("Content-Length"))
-        {
-            header.append(String.format("Content-Length: %d\r\n", this._response.body.length()));
-        }
-        header.append("\r\n");
-
-        if(this._response.body.length() > 0)
-        {
-            header.append(this._response.body);
-        }
-
-        ByteBuffer responseBuffer = ByteBuffer.wrap(header.toString().getBytes(StandardCharsets.UTF_8));
-        _client.write(responseBuffer, this, new ClientWriteHandler());
-    }
-
-    public void onWrite(int size)
-    {
-        this.doClose();
+            @Override
+            public void completed(Integer result, ByteBuffer attachment)
+            {
+                if(attachment.hasRemaining()) _client.write(attachment, attachment, this);
+                onWriteHeaderCompleted(resp);
+            }
+            @Override
+            public void failed(Throwable exc, ByteBuffer attachment)
+            {
+                onWriteHeaderError(exc, resp);
+            }
+        });
     }
 
     public void doClose()
@@ -138,5 +100,69 @@ public class Session
         {
 
         }
+    }
+
+    protected void onWriteHeaderCompleted(InternalResponse response)
+    {
+        if(!response.include_body())
+        {
+            this.onCompleted(response);
+            return;
+        }
+        this.doWriteChunkBody(response);
+    }
+
+    protected void onWriteHeaderError(Throwable e, InternalResponse response)
+    {
+        this.onError(e, response);
+    }
+
+    protected void onWriteBodyCompleted(InternalResponse response)
+    {
+        this.doWriteChunkBody(response);
+    }
+
+    protected void doWriteChunkBody(InternalResponse response)
+    {
+        ByteBuffer buffer = response.next_trunk();
+        if(buffer == null)
+        {
+            this.onCompleted(response);
+            return;
+        }
+        _client.write(buffer, buffer, new CompletionHandler<Integer, ByteBuffer>()
+        {
+            @Override
+            public void completed(Integer result, ByteBuffer attachment)
+            {
+                if(attachment.hasRemaining()) _client.write(attachment, attachment, this);
+                onWriteBodyCompleted(response);
+            }
+            @Override
+            public void failed(Throwable exc, ByteBuffer attachment)
+            {
+                onWriteBodyError(exc, response);
+            }
+        });
+    }
+
+    protected void onWriteBodyError(Throwable e, InternalResponse response)
+    {
+        this.onError(e, response);
+    }
+
+    protected void onCompleted(InternalResponse response)
+    {
+        if(!response.keepAlive())
+            this.doClose();
+        else
+            this.doHandle();
+    }
+
+    protected void onError(Throwable e, InternalResponse response)
+    {
+        System.out.println(response);
+        e.printStackTrace();
+        this.doClose();
     }
 }

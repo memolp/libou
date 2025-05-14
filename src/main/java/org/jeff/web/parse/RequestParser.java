@@ -22,16 +22,16 @@ public class RequestParser
         BODY,
     }
 
+    public Request request = new Request();
+
     private BinaryBuffer _cache_buffer = new BinaryBuffer(1024);
     private RequestParserFSM _state = RequestParserFSM.METHOD;
-    private Request _request = null;
     private DynamicBuffer _body_buffer = null;
     private int _wait_body_size = -1;
     private boolean _chunked_body = false;
 
-    public RequestParser(Request r)
+    public RequestParser()
     {
-        this._request = r;
     }
 
     public RequestParserState parser(ByteBuffer byteBuffer) throws RequestParseException
@@ -57,12 +57,12 @@ public class RequestParser
                 {
                     throw new RequestParseException("解析HTTP方法异常, 原始:%s", line);
                 }
-                _request.method = args[0].trim().toUpperCase();
-                _request.path = args[1].trim();
+                request.method = args[0].trim().toUpperCase();
+                request.path = args[1].trim();
                 if (args.length == 3) {
-                    _request.version = args[2].trim();
+                    request.version = args[2].trim();
                 } else {
-                    _request.version = "HTTP/0.9";
+                    request.version = "HTTP/0.9";
                 }
                 _state = RequestParserFSM.HEADER;
             } else if (_state == RequestParserFSM.HEADER)   // 读取头数据
@@ -71,7 +71,7 @@ public class RequestParser
                 if(line == null) return RequestParserState.Continue;
                 if(line.isEmpty())
                 {
-                    if(!_request.method.equals("POST"))  // 只有POST方法存在body
+                    if(!request.method.equals("POST"))  // 只有POST方法存在body
                     {
                         return parse_request_params();
                     }
@@ -83,7 +83,7 @@ public class RequestParser
                 {
                     throw new RequestParseException("解析HTTP头异常, 原始:%s", line);
                 }
-                _request.headers.put(args[0].trim().toUpperCase(), args[1].trim());
+                request.headers.put(args[0].trim().toUpperCase(), args[1].trim());
             }else if(_state == RequestParserFSM.BODY)  // 读取body内容 只有POST方法有
             {
                 if(this._body_buffer == null)
@@ -99,10 +99,10 @@ public class RequestParser
                         if (hex_len == null) return RequestParserState.Continue;
                         _wait_body_size = Integer.parseInt(hex_len, 16);
                     } else {
-                        String content_length = _request.get_header("Content-Length");
+                        String content_length = request.get_header("Content-Length");
                         if (content_length == null)  // 没有指定长度
                         {
-                            String chunked = _request.get_header("Transfer-Encoding");
+                            String chunked = request.get_header("Transfer-Encoding");
                             if (chunked != null && chunked.equals("chunked")) // 说明是分段传输
                             {
                                 _chunked_body = true;
@@ -162,19 +162,19 @@ public class RequestParser
     private RequestParserState parse_request_params() throws RequestParseException
     {
         // 先把URL里面的参数记录下来
-        String[] url_params = this._request.path.split("\\?", 2);
+        String[] url_params = this.request.path.split("\\?", 2);
         if(url_params.length > 1)
         {
             try {
-                this._request.path = url_params[0];
+                this.request.path = url_params[0];
                 this.parse_url_params(url_params[1]);
             } catch (UnsupportedEncodingException e) {
                 throw new RequestParseException("解析URL里面的参数异常，原始:%s", url_params[1]);
             }
         }
-        if(_request.method.equals("POST"))
+        if(request.method.equals("POST"))
         {
-            String content_type = _request.get_header("Content-Type");
+            String content_type = request.get_header("Content-Type");
             if(content_type.equals("application/x-www-form-urlencoded"))
             {
                 // 读取POST body里面的参数列表
@@ -234,11 +234,11 @@ public class RequestParser
 
     private void put_request_params(String key, Object value)
     {
-        if(!this._request.params.containsKey(key))
+        if(!this.request.params.containsKey(key))
         {
-            this._request.params.put(key, new LinkedList<Object>());
+            this.request.params.put(key, new LinkedList<Object>());
         }
-        this._request.params.get(key).add(value);
+        this.request.params.get(key).add(value);
     }
 
     private String _boundary;
