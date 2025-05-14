@@ -6,7 +6,6 @@ import org.jeff.web.parse.RequestParserState;
 import org.jeff.web.response.*;
 import org.jeff.web.router.Router;
 import org.jeff.web.router.RouterChooser;
-import org.jeff.web.server.aio_handlers.ClientReadHandler;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -15,9 +14,8 @@ import java.nio.channels.CompletionHandler;
 public class Session
 {
     private AsynchronousSocketChannel _client;
-    private ByteBuffer _buffer = ByteBuffer.allocate(1024);
+    private ByteBuffer _buffer = ByteBuffer.allocate(10240);
     private RequestParser _parser = null;
-    private ClientReadHandler _reader = new ClientReadHandler();
     private RouterChooser _router = null;
 
     public Session(AsynchronousSocketChannel client, RouterChooser router)
@@ -28,41 +26,52 @@ public class Session
 
     public void doHandle()
     {
+        if(!_client.isOpen()) return;
         this._parser = new RequestParser();
         this._buffer.clear();
-        _client.read(_buffer, this, _reader);
-    }
+        _client.read(_buffer, this, new CompletionHandler<Integer, Session>()
+        {
+            @Override
+            public void completed(Integer size, Session session)
+            {
+                if(size <= 0)
+                {
+                    doClose();
+                    return;
+                }
+                try
+                {
+                    _buffer.flip();
+                    RequestParserState res = _parser.parser(_buffer);
+                    if (res == RequestParserState.Continue)
+                    {
+                        _buffer.clear();
+                        _client.read(_buffer, null, this);
+                        return;
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
 
-    public void onRead(int size)
-    {
-        if (size <= 0) {
-            this.doClose();
-            return;
-        }
-        try {
-            this._buffer.flip();
-            RequestParserState res = this._parser.parser(this._buffer);
-            this._buffer.clear();
-            if (res == RequestParserState.Continue) {
-                _client.read(_buffer, this, _reader);
-                return;
+                try {
+                    Request request = _parser.request;
+                    Router router = _router.match_route(request.path);
+                    if (router != null) {
+                        send(router.doRequest(session, request));
+                    } else {
+                        send(ResponseBuilder.build(404));
+                    }
+                } catch (Exception e) {
+                    send(ResponseBuilder.build(500).write(e.getMessage()));
+                }
             }
-        } catch (RequestParseException e) {
-            System.out.println(e.toString());
-            this.doClose();
-            return;
-        }
-        try {
-            Request request = this._parser.request;
-            Router router = this._router.match_route(request.path);
-            if (router != null) {
-                this.send(router.doRequest(this, request));
-            } else {
-                this.send(ResponseBuilder.build(404));
+
+            @Override
+            public void failed(Throwable exc, Session session)
+            {
+                throw new RuntimeException(exc);
             }
-        } catch (Exception e) {
-            this.send(ResponseBuilder.build(500).write(e.getMessage()));
-        }
+        });
     }
 
     protected void send(Response response)

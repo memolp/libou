@@ -17,7 +17,7 @@ public class test
         runner.router.add_route("/home", HomeHandler.class);
         runner.router.add_static("/static", "E:\\JeffProject\\JavaProjects\\libou\\src\\test\\static");
 //        runner.add_static("/static", "./path");
-        HttpServer server = new HttpServer(runner, "localhost", 8080);
+        HttpServer server = new HttpServer(runner, "0.0.0.0", 8080);
         server.start();
 
         //System.in.read();

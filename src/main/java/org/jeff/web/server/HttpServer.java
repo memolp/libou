@@ -1,11 +1,14 @@
 package org.jeff.web.server;
 
+import org.jeff.web.Session;
 import org.jeff.web.runner.BaseRunner;
-import org.jeff.web.server.aio_handlers.AcceptHandler;
 
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -45,12 +48,36 @@ public class HttpServer
         this._serverGroup = AsynchronousChannelGroup.withThreadPool(this._serverThreadPool);
         this._serverChannel = AsynchronousServerSocketChannel.open(this._serverGroup);
         this._serverChannel.bind(new InetSocketAddress(this.host, this.port));
+
         this._logger.info("Server started on " + this.host + ":" + this.port);
     }
 
     public void doAccept()
     {
-        this._serverChannel.accept(this, new AcceptHandler());
+        this._serverChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>()
+        {
+            @Override
+            public void completed(AsynchronousSocketChannel client, Object attachment)
+            {
+                _serverChannel.accept(null, this);
+                try
+                {
+                    client.setOption(StandardSocketOptions.TCP_NODELAY, true);
+                    //client.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
+                    client.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+                    Session session = new Session(client, get_runner().router);
+                    session.doHandle();
+                } catch (Exception e) {
+                    _logger.info("Accept failed");
+                }
+            }
+
+            @Override
+            public void failed(Throwable exc, Object attachment)
+            {
+                _logger.info("Accept failed");
+            }
+        });
     }
 
     public void start(String host, int port)
@@ -70,7 +97,4 @@ public class HttpServer
             this._logger.severe(e.getMessage());
         }
     }
-
-
-
 }
