@@ -1,8 +1,10 @@
 package org.jeff.jsw.statements;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
+import org.jeff.jsw.exceptions.ReturnException;
+import org.jeff.jsw.objs.JsNull;
+import org.jeff.jsw.objs.JsObject;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -20,14 +22,18 @@ public class BlockStatement implements Statement
     }
 
     @Override
-    public Object execute(Env env, Object... args)
+    public JsObject execute(JsContext jsContext)
     {
-        Object result = null;
-        for(Statement statement : statements)
+        try
         {
-            result = statement.execute(env, args);
+            for (Statement statement : statements) {
+                statement.execute(jsContext);
+            }
+        }catch (ReturnException e)
+        {
+            return e.value;
         }
-        return result;
+        return JsNull.NIL;
     }
 
     @Override

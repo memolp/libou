@@ -7,9 +7,12 @@ public enum TokenType
     PAREN_CLOSE,    // )
     BRACE_OPEN,     // {
     BRACE_CLOSE,    // }
+    SQUARE_OPEN,    // [
+    SQUARE_CLOSE,   // ]
     SEMICOLON,      // ;
     COMMA,          // ,
     DOT,            // .
+    COLON,          // :
     // 定义全部的操作符号
     OP_ASSIGN,         // =
     OP_NOT,           // !

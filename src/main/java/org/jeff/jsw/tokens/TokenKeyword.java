@@ -12,7 +12,8 @@ public enum TokenKeyword
     WHERE("where", TokenType.WHERE),
     IN("in", TokenType.IN),
     RETURN("return", TokenType.RETURN),
-    BREAK("break", TokenType.BREAK)
+    BREAK("break", TokenType.BREAK),
+    FUNCTION("function", TokenType.FUNCTION),
 
     ;
     String key;

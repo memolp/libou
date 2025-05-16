@@ -1,6 +1,7 @@
 package org.jeff.jsw.statements;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
+import org.jeff.jsw.objs.JsObject;
 
 /**
  * 语句接口
@@ -8,10 +9,9 @@ import org.jeff.jsw.Env;
 public interface Statement
 {
     /**
-     * 执行语句，并返回最后一次语句的结果
-     * @param env
-     * @param args
+     * 执行语句
+     * @param jsContext
      * @return
      */
-    Object execute(Env env, Object...args);
+    JsObject execute(JsContext jsContext);
 }

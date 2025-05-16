@@ -1,12 +1,12 @@
 package org.jeff.jsw.statements;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
 import org.jeff.jsw.exceptions.BreakException;
 import org.jeff.jsw.exceptions.ContinueException;
 import org.jeff.jsw.exceptions.ReturnException;
 import org.jeff.jsw.exprs.Expression;
-
-import java.util.List;
+import org.jeff.jsw.objs.JsNull;
+import org.jeff.jsw.objs.JsObject;
 
 public class ForeachStatement implements Statement
 {
@@ -22,23 +22,25 @@ public class ForeachStatement implements Statement
     }
 
     @Override
-    public Object execute(Env env, Object... args)
+    public JsObject execute(JsContext jsContext)
     {
-        Env local = new Env(env);
-        Object result = null;
-        Object v = iter.eval(env);
-        Iterable vitr = Iterable.class.cast(v);
-        for(Object o : vitr)
+        JsContext local = new JsContext(jsContext);
+        JsObject v = iter.eval(jsContext);
+        if(!(v instanceof Iterable))
+        {
+            throw new RuntimeException("Not iterable");
+        }
+        for(Object o : (Iterable)v)
         {
             local.set(varName, o);
             try
             {
-                result = body.execute(local, args);
+                body.execute(local);
             }catch (BreakException e) {break;}
             catch (ContinueException e){}
             catch (ReturnException e){ return e.value;}
         };
-        return result;
+        return JsNull.NIL;
     }
 
     @Override

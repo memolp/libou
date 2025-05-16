@@ -1,8 +1,10 @@
 package org.jeff.jsw.exprs;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
+import org.jeff.jsw.objs.JsFunction;
+import org.jeff.jsw.objs.JsNull;
+import org.jeff.jsw.objs.JsObject;
 import org.jeff.jsw.statements.BlockStatement;
-import org.jeff.jsw.statements.Statement;
 
 import java.util.List;
 
@@ -17,16 +19,22 @@ public class FunctionExpr implements Expression
     }
 
     @Override
-    public Object eval(Env env)
+    public JsObject eval(JsContext jsContext)
     {
-        Env local = new Env(env);
-        return this.body.execute(local);
+        return new JsFunction("", this);
     }
 
-    public Object eval(Env env, Object...args)
+    public JsObject call(JsContext context, JsObject...args)
     {
-        Env local = new Env(env);
-        return this.body.execute(local, args);
+        JsContext local = new JsContext(context);
+        for(int i = 0; i < params.size(); i++)
+        {
+            if(i < args.length)
+                local.set(params.get(i), args[i]);
+            else
+                local.set(params.get(i), JsNull.NIL);
+        }
+        return body.execute(local);
     }
 
     @Override

@@ -1,41 +1,39 @@
 package org.jeff.jsw.exprs;
 
-import org.jeff.jsw.BuiltinFunction;
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
+import org.jeff.jsw.objs.JsCallable;
+import org.jeff.jsw.objs.JsObject;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class FunctionCallExpr implements Expression
 {
     Expression funcName;
-    List<Expression> params;
-    public FunctionCallExpr(Expression funcName, List<Expression> params)
+    List<Expression> arguments;
+    public FunctionCallExpr(Expression funcName, List<Expression> args)
     {
         this.funcName = funcName;
-        this.params = params;
+        this.arguments = args;
     }
     @Override
-    public Object eval(Env env) {
-        Object v = funcName.eval(env);
-        if (v == null) throw new RuntimeException("Undefined function: " + funcName.toString());
-        List<Object> args = new ArrayList<Object>();
-        for (Expression p : params) {
-            args.add(p.eval(env));
-        }
-        if (v instanceof FunctionExpr) {
-            FunctionExpr f = FunctionExpr.class.cast(v);
-            return f.eval(env, args.toArray());
-        } else if (v instanceof BuiltinFunction)
+    public JsObject eval(JsContext jsContext)
+    {
+        JsObject v = funcName.eval(jsContext);
+        if(!(v instanceof JsCallable))
+            throw new RuntimeException("Undefined function: " + funcName.toString());
+
+        JsObject[] arguments = new JsObject[this.arguments.size()];
+        for (int i = 0; i < this.arguments.size(); i++)
         {
-            BuiltinFunction f = BuiltinFunction.class.cast(v);
-            return f.call(env, args.toArray());
+            JsObject t = this.arguments.get(i).eval(jsContext);
+            arguments[i] = t;
         }
-        return null;
+        JsCallable f = (JsCallable) v;
+        return f.call(jsContext, arguments);
     }
 
     @Override
     public String toString() {
-        return "[FuncCallExp]:" + funcName.toString() + "(" + params.toString() + ")";
+        return "[FuncCallExp]:" + funcName.toString() + "(" + arguments.toString() + ")";
     }
 }

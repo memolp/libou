@@ -1,7 +1,9 @@
 package org.jeff.jsw.statements;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
 import org.jeff.jsw.exprs.Expression;
+import org.jeff.jsw.objs.JsNull;
+import org.jeff.jsw.objs.JsObject;
 
 public class LetStatement implements Statement
 {
@@ -13,11 +15,12 @@ public class LetStatement implements Statement
         this.expr = expr;
     }
 
-    public Object execute(Env env, Object ...args)
+    public JsObject execute(JsContext jsContext)
     {
-        Object val = null;
-        if(expr != null) val = expr.eval(env);
-        env.set(name, val);
+        if(expr != null)
+            jsContext.set(name, expr.eval(jsContext));
+        else
+            jsContext.set(name, JsNull.NIL);
         return null;
     }
 

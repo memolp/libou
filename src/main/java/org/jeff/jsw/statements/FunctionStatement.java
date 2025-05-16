@@ -1,7 +1,9 @@
 package org.jeff.jsw.statements;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
 import org.jeff.jsw.exprs.FunctionExpr;
+import org.jeff.jsw.objs.JsFunction;
+import org.jeff.jsw.objs.JsObject;
 
 import java.util.List;
 
@@ -17,9 +19,10 @@ public class FunctionStatement implements Statement
     }
 
     @Override
-    public Object execute(Env env, Object...args)
+    public JsObject execute(JsContext jsContext)
     {
-        env.set(funcName, functionExpr);
+        JsFunction func = new JsFunction(funcName, functionExpr);
+        jsContext.set(funcName, func);
         return null;
     }
 

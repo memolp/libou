@@ -1,6 +1,8 @@
 package org.jeff.jsw.exprs;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
+import org.jeff.jsw.objs.JsOperator;
+import org.jeff.jsw.objs.JsObject;
 
 public class BinaryExpr implements Expression
 {
@@ -14,24 +16,27 @@ public class BinaryExpr implements Expression
         this.right = right;
     }
 
-    public Object eval(Env env) {
-        Object l = left.eval(env);
-        Object r = right.eval(env);
-        switch (op) {
-            case "+": return toNumber(l) + toNumber(r);
-            case "-": return toNumber(l) - toNumber(r);
-            case "*": return toNumber(l) * toNumber(r);
-            case "/": return toNumber(l) / toNumber(r);
-            case "==": return l.equals(r);
-            case "!=": return !l.equals(r);
-            case "<": return toNumber(l) < toNumber(r);
-            case ">": return toNumber(l) > toNumber(r);
+    public JsObject eval(JsContext jsContext)
+    {
+        JsObject l = left.eval(jsContext);
+        JsObject r = right.eval(jsContext);
+        switch (op)
+        {
+            case "+": return JsOperator.add(l, r);
+            case "-": return JsOperator.sub(l, r);
+            case "*": return JsOperator.mul(l, r);
+            case "/": return JsOperator.div(l, r);
+            case "%": return JsOperator.mod(l, r);
+            case "==": return JsOperator.eq(l, r);
+            case "!=": return JsOperator.neq(l, r);
+            case "<": return JsOperator.lt(l, r);
+            case "<=": return JsOperator.lte(l, r);
+            case ">": return JsOperator.gt(l, r);
+            case ">=": return JsOperator.gte(l, r);
+            case "&&": return JsOperator.and(l, r);
+            case "||": return JsOperator.or(l, r);
             default: throw new RuntimeException("Unknown operator: " + op);
         }
-    }
-
-    private double toNumber(Object val) {
-        return ((Number) val).doubleValue();
     }
 
     @Override

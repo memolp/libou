@@ -1,8 +1,9 @@
 package org.jeff.jsw.exprs;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
+import org.jeff.jsw.objs.JsObject;
 
-public class VarExpr implements Expression
+public class VarExpr implements Assignable
 {
     private final String name;
 
@@ -10,8 +11,15 @@ public class VarExpr implements Expression
         this.name = name;
     }
 
-    public Object eval(Env env) {
-        return env.get(name);
+    public JsObject eval(JsContext context)
+    {
+        return context.get(name);
+    }
+
+    @Override
+    public void assign(JsContext context, JsObject value)
+    {
+        context.set(name, value);
     }
 
     @Override

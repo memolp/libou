@@ -1,6 +1,7 @@
 package org.jeff.jsw.exprs;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
+import org.jeff.jsw.objs.JsObject;
 
 /**
  * 常量
@@ -9,13 +10,13 @@ import org.jeff.jsw.Env;
  */
 public class LiteralExpr implements Expression
 {
-    private final Object value;
+    private final JsObject value;
 
-    public LiteralExpr(Object value) {
+    public LiteralExpr(JsObject value) {
         this.value = value;
     }
 
-    public Object eval(Env env) {
+    public JsObject eval(JsContext jsContext) {
         return value;
     }
 

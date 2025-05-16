@@ -48,6 +48,11 @@ public class Tokenizer
                     case '*':
                         tokens.add(new Token(TokenType.OP_STAR, "*")); advance(); break;
                     case '/':
+                        if(peek(1) == '/')
+                        {
+                            this.skipRecommend();
+                            break;
+                        }
                         tokens.add(new Token(TokenType.OP_SLASH, "/")); advance(); break;
                     case '%':
                         tokens.add(new Token(TokenType.OP_PERCENT, "|")); advance(); break;
@@ -130,8 +135,11 @@ public class Tokenizer
                     case ')': tokens.add(new Token(TokenType.PAREN_CLOSE, ")")); advance(); break;
                     case '{': tokens.add(new Token(TokenType.BRACE_OPEN, "{")); advance(); break;
                     case '}': tokens.add(new Token(TokenType.BRACE_CLOSE, "}")); advance(); break;
+                    case '[': tokens.add(new Token(TokenType.SQUARE_OPEN, "[")); advance(); break;
+                    case ']': tokens.add(new Token(TokenType.SQUARE_CLOSE, "]")); advance(); break;
                     case ';': tokens.add(new Token(TokenType.SEMICOLON, ";")); advance(); break;
                     case ',': tokens.add(new Token(TokenType.COMMA, ",")); advance(); break;
+                    case ':': tokens.add(new Token(TokenType.COLON, ":")); advance(); break;
                     default:
                         error("Unexpected character: " + c);
                 }
@@ -213,7 +221,11 @@ public class Tokenizer
     private boolean isOctDigit(char c) {
         return c >= '0' && c <= '7';
     }
-
+    private void skipRecommend()
+    {
+        while(peek() != '\n') advance();
+        advance();
+    }
     /**
      * 读取字符串
      * @param tag 字符串是双引号还是单引号

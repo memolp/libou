@@ -1,6 +1,8 @@
 package org.jeff.jsw.exprs;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
+import org.jeff.jsw.objs.JsOperator;
+import org.jeff.jsw.objs.JsObject;
 
 public class UnaryExpr implements Expression
 {
@@ -12,23 +14,18 @@ public class UnaryExpr implements Expression
         this.expr = expr;
     }
     @Override
-    public Object eval(Env env)
+    public JsObject eval(JsContext jsContext)
     {
-        Object value = this.expr.eval(env);
-        if(this.op.equals("-"))
+        JsObject value = this.expr.eval(jsContext);
+        switch (this.op)
         {
-            Number v = Number.class.cast(value);
-            if(value instanceof Integer) return -v.intValue();
-            else if(value instanceof Double) return -v.doubleValue();
-        }else if(this.op.equals("!"))
-        {
-            return !(Boolean)value;
-        }else if(this.op.equals("~"))
-        {
-            Number v = Number.class.cast(value);
-            if(value instanceof Integer) return ~v.intValue();
+            case "-": return JsOperator.neg(value);
+            case "!": return JsOperator.not(value);
+            case "~": return JsOperator.xor(value);
+            case "++":
+            case "--":
+            default: return null;
         }
-        return null;
     }
 
     @Override

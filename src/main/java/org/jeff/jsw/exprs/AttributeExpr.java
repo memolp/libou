@@ -1,8 +1,10 @@
 package org.jeff.jsw.exprs;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
+import org.jeff.jsw.objs.JsObject;
+import org.jeff.jsw.objs.JsOperator;
 
-public class AttributeExpr implements Expression
+public class AttributeExpr implements Assignable
 {
     public Expression left;
     public Expression right;
@@ -13,10 +15,18 @@ public class AttributeExpr implements Expression
     }
 
     @Override
-    public Object eval(Env env)
+    public JsObject eval(JsContext jsContext)
     {
-        // a.b.c.d.e
-        Object value = this.left.eval(env);
-        return null;
+        JsObject target = this.left.eval(jsContext);
+        JsObject index = this.right.eval(jsContext);
+        return JsOperator.getIndex(target, index);
+    }
+
+    @Override
+    public void assign(JsContext context, JsObject value)
+    {
+        JsObject target = this.left.eval(context);
+        JsObject index = this.right.eval(context);
+        JsOperator.setIndex(target, index, value);
     }
 }

@@ -1,12 +1,12 @@
 package org.jeff.jsw.statements;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
+import org.jeff.jsw.objs.JsOperator;
 import org.jeff.jsw.exceptions.BreakException;
 import org.jeff.jsw.exceptions.ContinueException;
 import org.jeff.jsw.exceptions.ReturnException;
 import org.jeff.jsw.exprs.Expression;
-
-import java.util.List;
+import org.jeff.jsw.objs.JsObject;
 
 public class WhereStatement implements Statement
 {
@@ -19,13 +19,13 @@ public class WhereStatement implements Statement
         this.body = body;
     }
     @Override
-    public Object execute(Env env, Object...args)
+    public JsObject execute(JsContext jsContext)
     {
         do {
-            Object c = this.cond.eval(env);
-            if(!Boolean.TRUE.equals(c)) break;
+            JsObject c = this.cond.eval(jsContext);
+            if(!JsOperator.toBool(c)) break;
             try {
-                body.execute(env, args);
+                body.execute(jsContext);
             }catch (BreakException e) {break;}
             catch (ContinueException e){}
             catch (ReturnException e){return e.value;}

@@ -1,7 +1,9 @@
 package org.jeff.jsw.statements;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
+import org.jeff.jsw.objs.JsOperator;
 import org.jeff.jsw.exprs.Expression;
+import org.jeff.jsw.objs.JsObject;
 
 import java.util.List;
 
@@ -21,25 +23,25 @@ public class IfStatement implements Statement
         this.branchs = branchs;
     }
 
-    private boolean checkCondition(Env env)
+    private boolean checkCondition(JsContext jsContext)
     {
         if(condition == null) return true;
-        Object result = condition.eval(env);
-        return Boolean.TRUE.equals(result);
+        JsObject result = condition.eval(jsContext);
+        return JsOperator.toBool(result);
     }
 
-    public Object execute(Env env, Object... args)
+    public JsObject execute(JsContext jsContext)
     {
-        if(checkCondition(env))
+        if(checkCondition(jsContext))
         {
-            return this.body.execute(env, args);
+            return this.body.execute(jsContext);
         }else
         {
             for(IfStatement stmt : branchs)
             {
-                if(stmt.checkCondition(env))
+                if(stmt.checkCondition(jsContext))
                 {
-                    stmt.execute(env, args);
+                    stmt.execute(jsContext);
                     break;
                 }
             }

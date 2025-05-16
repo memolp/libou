@@ -1,12 +1,13 @@
 package org.jeff.jsw.statements;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
 import org.jeff.jsw.exceptions.BreakException;
+import org.jeff.jsw.objs.JsObject;
 
 public class BreakStatement implements Statement
 {
     @Override
-    public Object execute(Env env, Object... args)
+    public JsObject execute(JsContext jsContext)
     {
         throw new BreakException();
     }

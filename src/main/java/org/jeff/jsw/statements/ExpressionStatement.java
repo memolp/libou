@@ -1,7 +1,8 @@
 package org.jeff.jsw.statements;
 
-import org.jeff.jsw.Env;
+import org.jeff.jsw.JsContext;
 import org.jeff.jsw.exprs.Expression;
+import org.jeff.jsw.objs.JsObject;
 
 public class ExpressionStatement implements Statement
 {
@@ -12,9 +13,9 @@ public class ExpressionStatement implements Statement
     }
 
     @Override
-    public Object execute(Env env, Object...args)
+    public JsObject execute(JsContext jsContext)
     {
-        return expression.eval(env);
+        return expression.eval(jsContext);
     }
 
     @Override

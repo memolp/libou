@@ -1,19 +1,22 @@
-package org.jeff.jsw;
+package org.jeff.jsw.statements;
 
 import org.jeff.jsw.exprs.*;
-import org.jeff.jsw.statements.*;
+import org.jeff.jsw.objs.JsNumber;
+import org.jeff.jsw.objs.JsString;
 import org.jeff.jsw.tokens.Token;
 import org.jeff.jsw.tokens.TokenType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class Parser
+public class ASTParser
 {
     private final List<Token> tokens;
     private int pos = 0;
 
-    public Parser(List<Token> tokens) {
+    public ASTParser(List<Token> tokens) {
         this.tokens = tokens;
     }
 
@@ -208,12 +211,13 @@ public class Parser
         }
         // 函数参数
         List<String> arguments = new ArrayList<>();
-        while (!match(TokenType.PAREN_CLOSE))
+        while (peek().type != TokenType.PAREN_CLOSE)
         {
             String param = expect(TokenType.IDENT).text;
             arguments.add(param);
             if(!match(TokenType.COMMA)) break;
         }
+        expect(TokenType.PAREN_CLOSE);
         // 函数体
         expect(TokenType.BRACE_OPEN);
         BlockStatement body = new BlockStatement();
@@ -270,7 +274,19 @@ public class Parser
             }else if(op.type == TokenType.PAREN_OPEN)  // function call
             {
                 left = this.parseCallExpression(left);
-            }else
+            }else if(op.type == TokenType.OP_ASSIGN) // 赋值
+            {
+                expect(TokenType.OP_ASSIGN);
+                Expression right = parseExpression();
+                return new AssignExpr((Assignable) left, right);
+            }else if(op.type == TokenType.SQUARE_OPEN) // 属性访问
+            {
+                expect(TokenType.SQUARE_OPEN);
+                Expression index = parseExpression();
+                expect(TokenType.SQUARE_CLOSE);
+                left = new AttributeExpr(left, index);
+            }
+            else
             {
                 break;
             }
@@ -299,7 +315,7 @@ public class Parser
         switch (t.type)
         {
             case NUMBER: return new LiteralExpr(this.parseNumber(t.text));
-            case STRING: return new LiteralExpr(t.text);
+            case STRING: return new LiteralExpr(new JsString(t.text));
             case IDENT:
                 return new VarExpr(t.text);
             case PAREN_OPEN:  // (  )
@@ -308,6 +324,10 @@ public class Parser
                 return e;
             case FUNCTION:  // function 函数定义
                 return parseFunctionExpression();
+            case SQUARE_OPEN:
+                return parseListExpression();
+            case BRACE_OPEN:
+                return parseMapExpression();
             default:
                 throw new RuntimeException("Unexpected token in expression: " + t);
         }
@@ -332,6 +352,32 @@ public class Parser
         return new FunctionExpr(params, body);
     }
 
+    private Expression parseListExpression()
+    {
+        List<Expression> items = new ArrayList<>();
+        do {
+            if (peek().type == TokenType.SQUARE_CLOSE) break;
+            Expression item = this.parseExpression();
+            items.add(item);
+        }while (match(TokenType.COMMA));
+        expect(TokenType.SQUARE_CLOSE);
+        return new ListExpr(items);
+    }
+
+    private Expression parseMapExpression()
+    {
+        Map<Expression, Expression> map = new HashMap<>();
+        do {
+            if(peek().type == TokenType.BRACE_CLOSE) break;
+            Expression key = this.parseExpression();
+            expect(TokenType.COLON);
+            Expression value = this.parseExpression();
+            map.put(key, value);
+        }while (match(TokenType.COMMA));
+        expect(TokenType.BRACE_CLOSE);
+        return new MapExpr(map);
+    }
+
     private FunctionCallExpr parseCallExpression(Expression func)
     {
         expect(TokenType.PAREN_OPEN);
@@ -347,12 +393,15 @@ public class Parser
         return new FunctionCallExpr(func, args);
     }
 
-    private Object parseNumber(String s)
+    private JsNumber parseNumber(String s)
     {
-        if (s.startsWith("0x") || s.startsWith("0X")) return Integer.parseInt(s.substring(2), 16);
-        if (s.startsWith("0o") || s.startsWith("0O")) return Integer.parseInt(s.substring(2), 8);
-        if (s.contains(".") || s.contains("e") || s.contains("E")) return Double.parseDouble(s);
-        return Integer.parseInt(s);
+        if (s.startsWith("0x") || s.startsWith("0X"))
+            return new JsNumber(Integer.parseInt(s.substring(2), 16));
+        if (s.startsWith("0o") || s.startsWith("0O"))
+            return new JsNumber(Integer.parseInt(s.substring(2), 8));
+        if (s.contains(".") || s.contains("e") || s.contains("E"))
+            return new JsNumber(Double.parseDouble(s));
+        return new JsNumber(Integer.parseInt(s));
     }
 
     private int getPrecedence(TokenType type)
