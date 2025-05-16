@@ -30,17 +30,18 @@ public class ForeachStatement implements Statement
         {
             throw new RuntimeException("Not iterable");
         }
+        JsObject result = JsNull.NIL;
         for(Object o : (Iterable)v)
         {
             local.set(varName, o);
             try
             {
-                body.execute(local);
+                result = body.execute(local);
             }catch (BreakException e) {break;}
             catch (ContinueException e){}
             catch (ReturnException e){ return e.value;}
         };
-        return JsNull.NIL;
+        return result;
     }
 
     @Override

@@ -132,6 +132,18 @@ public class JsOperator
         throw  new RuntimeException("Cannot xor:" + a.type());
     }
 
+    public static JsObject incr(JsObject a)
+    {
+        if(!(a instanceof JsNumber)) throw new RuntimeException("not number");
+        return new JsNumber(++((JsNumber) a).value);
+    }
+
+    public static JsObject decr(JsObject a)
+    {
+        if(!(a instanceof JsNumber)) throw new RuntimeException("not number");
+        return new JsNumber(--((JsNumber) a).value);
+    }
+
     public static JsObject getIndex(JsObject target, JsObject key)
     {
         if(target instanceof JsIndexable)

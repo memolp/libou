@@ -1,6 +1,7 @@
 package org.jeff.jsw.statements;
 
 import org.jeff.jsw.JsContext;
+import org.jeff.jsw.objs.JsNull;
 import org.jeff.jsw.objs.JsOperator;
 import org.jeff.jsw.exceptions.BreakException;
 import org.jeff.jsw.exceptions.ContinueException;
@@ -27,17 +28,20 @@ public class ForStatement implements Statement
     @Override
     public JsObject execute(JsContext jsContext)
     {
-        init.execute(jsContext);
+        JsContext local = new JsContext(jsContext);
+        init.execute(local);
+        JsObject result = JsNull.NIL;
         do
         {
-            JsObject c = cond.eval(jsContext);
+            JsObject c = cond.eval(local);
             if(!JsOperator.toBool(c)) break;
             try {
-                this.body.execute(jsContext);
+                result = this.body.execute(local);
             }catch (BreakException e) {break;}
             catch (ContinueException e){}
             catch (ReturnException e){return e.value;}
+            this.update.execute(local);
         }while (true);
-        return null;
+        return result;
     }
 }

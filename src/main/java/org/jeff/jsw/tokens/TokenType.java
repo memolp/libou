@@ -23,7 +23,7 @@ public enum TokenType
     OP_BIT_AND, OP_BIT_OR, OP_BIT_NOR, // & | ~
     OP_AND,            // &&
     OP_OR,           // ||
-
+    OP_INCR, OP_DECR,   // ++ --
     LET, IF, FOR,  // keywords
     WHERE,FUNCTION, RETURN,BREAK, CONTINUE,
     IN,

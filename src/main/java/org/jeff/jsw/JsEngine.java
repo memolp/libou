@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 public class JsEngine
 {
     private JsContext _context;
-
+    public StringBuilder _sb;
     public JsEngine()
     {
         this._context = new JsContext();
@@ -32,6 +32,14 @@ public class JsEngine
     public void setFunction(String name, JsBuiltinFunction func)
     {
         this._context.set(name, func);
+    }
+    public void setContext(JsContext context)
+    {
+        this._context = context;
+    }
+    public JsContext getContext()
+    {
+        return this._context;
     }
     public Object eval(String code)
     {

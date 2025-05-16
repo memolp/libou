@@ -1,6 +1,7 @@
 package org.jeff.jsw.statements;
 
 import org.jeff.jsw.JsContext;
+import org.jeff.jsw.objs.JsNull;
 import org.jeff.jsw.objs.JsOperator;
 import org.jeff.jsw.exprs.Expression;
 import org.jeff.jsw.objs.JsObject;
@@ -32,21 +33,24 @@ public class IfStatement implements Statement
 
     public JsObject execute(JsContext jsContext)
     {
-        if(checkCondition(jsContext))
+        JsContext local = new JsContext(jsContext);
+        if(checkCondition(local))
         {
-            return this.body.execute(jsContext);
+            return this.body.execute(local);
         }else
         {
+            JsObject result = JsNull.NIL;
             for(IfStatement stmt : branchs)
             {
-                if(stmt.checkCondition(jsContext))
+                local = new JsContext(jsContext);
+                if(stmt.checkCondition(local))
                 {
-                    stmt.execute(jsContext);
+                    result = stmt.execute(local);
                     break;
                 }
             }
+            return result;
         }
-        return null;
     }
 
     @Override

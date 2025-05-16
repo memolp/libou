@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class JsList implements JsIndexable, Iterable<JsObject>
+public class JsList implements JsObject, JsIndexable, Iterable<JsObject>
 {
     public List<JsObject> items;
     public JsList()
     {
-        items = new ArrayList<JsObject>();
+        items = new ArrayList<>();
     }
 
     public JsList(List<JsObject> items)

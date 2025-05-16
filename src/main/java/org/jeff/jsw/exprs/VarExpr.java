@@ -5,7 +5,7 @@ import org.jeff.jsw.objs.JsObject;
 
 public class VarExpr implements Assignable
 {
-    private final String name;
+    public final String name;
 
     public VarExpr(String name) {
         this.name = name;

@@ -269,8 +269,10 @@ public class ASTParser
                 left = new BinaryExpr(left, op.text, right);
             }else if(op.type == TokenType.DOT)
             {
-                Expression right = this.parseExpression();
-                left = new AttributeExpr(left, right);
+                expect(TokenType.DOT);
+                Expression right = this.parsePrimary();
+                if(!(right instanceof VarExpr)) throw new RuntimeException("Index name error");
+                left = new AttributeExpr(left, new LiteralExpr(new JsString(((VarExpr)right).name)));
             }else if(op.type == TokenType.PAREN_OPEN)  // function call
             {
                 left = this.parseCallExpression(left);
@@ -285,6 +287,10 @@ public class ASTParser
                 Expression index = parseExpression();
                 expect(TokenType.SQUARE_CLOSE);
                 left = new AttributeExpr(left, index);
+            }else if(op.type == TokenType.OP_INCR || op.type == TokenType.OP_DECR)
+            {
+                next();
+                left = new UnaryExpr(op.text, left);
             }
             else
             {
@@ -300,7 +306,7 @@ public class ASTParser
      */
     private Expression parseUnary()
     {
-        if (match(TokenType.OP_NOT) || match(TokenType.OP_MINUS) || match(TokenType.OP_BIT_NOR))
+        if (match(TokenType.OP_NOT) || match(TokenType.OP_MINUS) || match(TokenType.OP_BIT_NOR) || match(TokenType.OP_INCR) || match(TokenType.OP_DECR))
         {
             Token operator = prev();
             Expression right = parseUnary();
@@ -408,9 +414,11 @@ public class ASTParser
     {
         switch (type)
         {
+            case DOT: return 10;
             case OP_NOT: return 9;
             case OP_STAR: case OP_SLASH: case OP_PERCENT: return 8;
             case OP_PLUS: case OP_MINUS: return 7;
+            case OP_INCR: case OP_DECR: return 6;  // 优先级问题
             case OP_LEFT_SHIFT: case OP_RIGHT_SHIFT: return 6;
             case OP_LT: case OP_LTE: case OP_GT: case OP_GTE: return 5;
             case OP_EQ: case OP_NEQ: return 4;

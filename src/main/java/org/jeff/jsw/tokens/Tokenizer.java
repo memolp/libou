@@ -42,8 +42,16 @@ public class Tokenizer
                 switch (c)
                 {
                     case '+':
+                        if(peek(1) == '+')
+                        {
+                            tokens.add(new Token(TokenType.OP_INCR, "++")); advance(2); break;
+                        }
                         tokens.add(new Token(TokenType.OP_PLUS, "+")); advance(); break;
                     case '-':
+                        if(peek(1) == '-')
+                        {
+                            tokens.add(new Token(TokenType.OP_DECR, "-")); advance(2); break;
+                        }
                         tokens.add(new Token(TokenType.OP_MINUS, "-")); advance(); break;
                     case '*':
                         tokens.add(new Token(TokenType.OP_STAR, "*")); advance(); break;

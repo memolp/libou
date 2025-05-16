@@ -26,14 +26,15 @@ public class BlockStatement implements Statement
     {
         try
         {
+            JsObject value = JsNull.NIL;
             for (Statement statement : statements) {
-                statement.execute(jsContext);
+                value = statement.execute(jsContext);
             }
+            return value;
         }catch (ReturnException e)
         {
             return e.value;
         }
-        return JsNull.NIL;
     }
 
     @Override

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class JsMap implements JsIndexable, Iterable<JsObject>
+public class JsMap implements JsObject, JsIndexable, Iterable<JsObject>
 {
     public Map<JsObject, JsObject> items;
     public JsMap()

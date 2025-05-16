@@ -22,8 +22,8 @@ public class UnaryExpr implements Expression
             case "-": return JsOperator.neg(value);
             case "!": return JsOperator.not(value);
             case "~": return JsOperator.xor(value);
-            case "++":
-            case "--":
+            case "++": return JsOperator.incr(value);
+            case "--": return JsOperator.decr(value);
             default: return null;
         }
     }
