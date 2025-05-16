@@ -3,6 +3,7 @@ package org.jeff.jsw;
 import org.jeff.jsw.objs.JsBuiltinFunction;
 import org.jeff.jsw.objs.JsObject;
 import org.jeff.jsw.objs.JsString;
+import org.jeff.jsw.statements.Statement;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -14,22 +15,27 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TemplateEngine
+public class TemplateEngine extends JsEngine
 {
-    static JsEngine _engine;
-    static
+    private StringBuilder code_sb = new StringBuilder();
+    @Override
+    protected void loadBuiltin()
     {
-        _engine = new JsEngine();
-        _engine.setFunction("echo", new JsBuiltinFunction() {
+        super.loadBuiltin();
+        this.setFunction("echo", new JsBuiltinFunction() {
             @Override
             public JsObject call(JsContext jsContext, JsObject... args)
             {
-                if(args.length == 0) return new JsString("");
-                if(args.length == 1) return args[0];
+                if(args.length == 0) return null;
+                if(args.length == 1)
+                {
+                    code_sb.append(args[0].toString());
+                    return null;
+                }
                 String fmt = String.valueOf(args[0]);
                 List<Object> _args = new LinkedList<>();
                 _args.addAll(Arrays.asList(args).subList(1, args.length));
-                _engine._sb.append(String.format(fmt, _args.toArray()));
+                code_sb.append(String.format(fmt, _args.toArray()));
                 return null;
             }
         });
@@ -37,7 +43,7 @@ public class TemplateEngine
 
     private static final Pattern codePattern = Pattern.compile("\\{%\\s*(.*?)\\s*%}", Pattern.DOTALL);
 
-    public static String render(String template)
+    public String render(String template)
     {
         StringBuilder output = new StringBuilder();
         Matcher matcher = codePattern.matcher(template);
@@ -54,21 +60,24 @@ public class TemplateEngine
         return output.toString();
     }
 
-    private static String runJS(String code)
+    private String runJS(String code)
     {
-        _engine._sb = new StringBuilder();
-        _engine.eval(code);
-        return _engine._sb.toString();
+        code_sb = new StringBuilder();
+        this.eval(code);
+        return code_sb.toString();
     }
-
-    public static String render(String filename, HashMap<String, Object> params)
+    static HashMap<String, Statement> temp_Cache = new HashMap<>();
+    public String render(String filename, HashMap<String, Object> params)
     {
         HashMap<String, JsObject> contextVars = new HashMap<>();
         for(String key : params.keySet())
         {
             contextVars.put(key, JsObject.to(params.get(key)));
         }
-        _engine.getContext().contextVars = contextVars;
+        this.getContext().contextVars = contextVars;
+        if(temp_Cache.containsKey(filename))  // TODO 增加模板缓存，减少语法树的建立消耗
+        {
+        }
         try
         {
             String template = new String(Files.readAllBytes(Paths.get(filename)), StandardCharsets.UTF_8);

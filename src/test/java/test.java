@@ -26,21 +26,9 @@ public class test
         Thread.currentThread().join();
     }
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
         System.out.println(System.getProperty("user.dir"));//user.dir指定了当前的路径
-        //JsEngine engine = new JsEngine();
-        //engine.doFile("src/test/scripts/test.jsw");
-//        UserObject user = new UserObject();
-        HashMap<String, Object> user = new HashMap<>();
-        user.put("a", "xxx");
-        user.put("n", "121111");
-        user.put("c", 1);
-        HashMap<String, Object> vars = new HashMap<>();
-        vars.put("Title", "异世界");
-        vars.put("obj", user);
-        vars.put("users", new LinkedList<>());
-        String content = TemplateEngine.render("src/test/static/index.html", vars);
-        System.out.println(content);
+        http_test();
     }
 }

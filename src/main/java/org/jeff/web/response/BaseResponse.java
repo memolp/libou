@@ -189,9 +189,15 @@ public class BaseResponse implements InternalResponse, Response
 
     public void onBeforeWriteHeader()
     {
+        // TODO 实际上与HTTP交互的长度是字节的长度，如果直接用this.body.length()，如果出现中文就长度不对了
+        int length = 0;
+        if(!onlyHeader)
+        {
+            length = this.body.toString().getBytes().length;
+        }
         if(!this.headers.containsKey("Content-Length"))
         {
-            this.set_header("Content-Length", String.format("%d", this.body.length()));
+            this.set_header("Content-Length", String.format("%d", length));
         }
     }
 

@@ -59,7 +59,7 @@ public class JsEngine
         return this.eval(code);
     }
 
-    private void loadBuiltin()
+    protected void loadBuiltin()
     {
         this.setFunction("print", new PrintFunction());
     }
