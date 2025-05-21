@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -58,7 +59,11 @@ public class RequestParser
                     throw new RequestParseException("解析HTTP方法异常, 原始:%s", line);
                 }
                 request.method = args[0].trim().toUpperCase();
-                request.path = args[1].trim();
+                try {
+                    request.path = URLDecoder.decode(args[1].trim(), StandardCharsets.UTF_8.name());
+                } catch (UnsupportedEncodingException e) {
+                    throw new RequestParseException("解析URL地址出错， 原始:%s", args[1]);
+                }
                 if (args.length == 3) {
                     request.version = args[2].trim();
                 } else {

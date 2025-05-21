@@ -1,6 +1,6 @@
 package org.jeff.web.handlers;
 
-import org.jeff.web.HttpDateHelper;
+import org.jeff.web.utils.HttpDateHelper;
 import org.jeff.web.Request;
 import org.jeff.web.response.*;
 import org.jeff.web.router.ResourceRouter;
@@ -16,36 +16,31 @@ public class StaticRequestHandler extends RequestHandler
     public int max_age = 86400;
 
     @Override
-    public Response head(Request request, Router router)
+    public void head(Request request, Response response)
     {
-        return this.doRequest(request, router, false);
+        this.doRequest(request, response);
     }
 
     @Override
-    public Response get(Request request, Router router)
+    public void get(Request request, Response response)
     {
-        return this.doRequest(request, router, true);
+        this.doRequest(request, response);
     }
 
-    private Response doRequest(Request request, Router router, boolean include_body)
+    private void doRequest(Request request, Response response)
     {
-        File file = getFile(request, router);
+        File file = getFile(request);
         if(file == null)
         {
-            return ResponseBuilder.build(404);
+            response.set_status(404, "Not Found");
+            return;
         }
         String request_range = request.get_header("Range");
         if(request_range != null && this.support_range)
         {
-            FileRangeResponse response = ResponseBuilder.buildRange();
-            response.set_file(file);
-            response.set_range(request_range);
-            response.only_header(!include_body);
-            return response;
+            response.write(new FileRangeWriter(file, request_range));
+            return;
         }
-        FileResponse response = ResponseBuilder.buildStream();
-        response.set_file(file);
-        response.only_header(!include_body);
         if(support_cache)
         {
             String if_modify_date = request.get_header("If-Modify-Date");
@@ -53,24 +48,24 @@ public class StaticRequestHandler extends RequestHandler
             String file_date = HttpDateHelper.formatToRFC822(file.lastModified());
             if(cache_control != null && cache_control.equals("no-store"))
             {
-                return response;
+                response.write(new FileWriter(file));
+                return;
             }
             response.set_header("Last-Modify-Date", file_date);
             response.set_header("Cache-Control", String.format("max-age=%d", max_age));
             if(if_modify_date != null && if_modify_date.equals(file_date))
             {
-                response.only_header(true);
                 response.set_status(304);
-                return response;
+                return;
             }
         }
         response.set_header("Accept-Range", "bytes");
-        return response;
+        response.write(new FileWriter(file));
     }
 
-    private File getFile(Request request, Router router)
+    private File getFile(Request request)
     {
-        ResourceRouter resourceRouter = (ResourceRouter)router;
+        ResourceRouter resourceRouter = (ResourceRouter)this.router;
         String path = request.path.replace(resourceRouter.resPath, "");
         String filename;
         if(!path.startsWith("/"))

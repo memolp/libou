@@ -1,12 +1,10 @@
-package org.jeff.web;
+package org.jeff.web.utils;
 
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.Locale;
 
 public class HttpDateHelper
 {

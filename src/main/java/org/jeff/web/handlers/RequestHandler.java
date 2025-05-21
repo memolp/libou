@@ -1,27 +1,36 @@
 package org.jeff.web.handlers;
 
 
+import org.jeff.web.HttpContext;
 import org.jeff.web.Request;
 import org.jeff.web.response.Response;
-import org.jeff.web.response.ResponseBuilder;
 import org.jeff.web.router.Router;
 
 public class RequestHandler
 {
+    public HttpContext context;
+    public Router router;
+
     public RequestHandler() {}
 
-    public Response get(Request request, Router router)
+    public void initial(HttpContext context, Router router)
     {
-        return ResponseBuilder.build(403);
+        this.context = context;
+        this.router = router;
     }
 
-    public Response post(Request request, Router router)
+    public void get(Request request, Response response)
     {
-        return ResponseBuilder.build(403);
+
     }
 
-    public Response head(Request request, Router router)
+    public void post(Request request, Response response)
     {
-        return ResponseBuilder.build(403);
+
+    }
+
+    public void head(Request request, Response response)
+    {
+
     }
 }

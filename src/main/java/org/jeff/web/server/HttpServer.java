@@ -1,100 +1,83 @@
 package org.jeff.web.server;
 
-import org.jeff.web.Session;
-import org.jeff.web.runner.BaseRunner;
+import org.jeff.web.Application;
+import org.jeff.web.HttpContext;
+import org.jeff.web.router.RouterChooser;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 
 public class HttpServer
 {
-    public String host = "0.0.0.0";
-    public int port = 80;
+    public final String host;
+    public final int port;
+    public final HttpContext context;
     public int ThreadNum = 4;
-
     private ExecutorService _serverThreadPool = null;
     private AsynchronousChannelGroup _serverGroup = null;
     private AsynchronousServerSocketChannel _serverChannel = null;
-    private Logger _logger = Logger.getLogger(HttpServer.class.getName());
-    private BaseRunner _runner = null;
+    private final ServerAcceptHandler _acceptHandler = new ServerAcceptHandler();
 
-    public HttpServer(BaseRunner runner)
+    public HttpServer(HttpContext context, String host, int port)
     {
-        this._runner = runner;
-    }
-
-    public HttpServer(BaseRunner runner, String host, int port)
-    {
-        this._runner = runner;
+        this.context = context;
         this.host = host;
         this.port = port;
     }
 
-    public BaseRunner get_runner()
-    {
-        return this._runner;
-    }
-
-    private void init() throws Exception
+    protected void setupServer(String host, int port) throws IOException
     {
         this._serverThreadPool = Executors.newFixedThreadPool(this.ThreadNum);
         this._serverGroup = AsynchronousChannelGroup.withThreadPool(this._serverThreadPool);
         this._serverChannel = AsynchronousServerSocketChannel.open(this._serverGroup);
-        this._serverChannel.bind(new InetSocketAddress(this.host, this.port));
-
-        this._logger.info("Server started on " + this.host + ":" + this.port);
+        this._serverChannel.bind(new InetSocketAddress(host, port));
     }
 
-    public void doAccept()
+    protected void doAccept()
     {
-        this._serverChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>()
+        this._serverChannel.accept(this, this._acceptHandler);
+    }
+
+    public void onAcceptError(Throwable e)
+    {
+
+    }
+
+    public void shutdown()
+    {
+        try
         {
-            @Override
-            public void completed(AsynchronousSocketChannel client, Object attachment)
-            {
-                _serverChannel.accept(null, this);
-                try
-                {
-                    client.setOption(StandardSocketOptions.TCP_NODELAY, true);
-                    //client.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
-                    client.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-                    Session session = new Session(client, get_runner().router);
-                    session.doHandle();
-                } catch (Exception e) {
-                    _logger.info("Accept failed");
-                }
-            }
-
-            @Override
-            public void failed(Throwable exc, Object attachment)
-            {
-                _logger.info("Accept failed");
-            }
-        });
-    }
-
-    public void start(String host, int port)
-    {
-        this.host = host;
-        this.port = port;
-        this.start();
-    }
-
-    public void start()
-    {
-        try {
-            this.init();
-            this.doAccept();
+            this._serverThreadPool.shutdownNow();
+            this._serverGroup.shutdownNow();
         }catch (Exception e)
         {
-            this._logger.severe(e.getMessage());
+            e.printStackTrace();
         }
+    }
+
+    public void start() throws IOException
+    {
+        this.setupServer(this.host, this.port);
+        this.doAccept();
+    }
+
+    public void onAccept(AsynchronousSocketChannel client)
+    {
+        this._serverChannel.accept(this, this._acceptHandler);
+        try
+        {
+            client.setOption(StandardSocketOptions.TCP_NODELAY, true);
+        }catch (Exception e)
+        {
+            return;
+        }
+        Session session = new Session(this.context, client);
+        session.doHandle();
     }
 }

@@ -25,4 +25,5 @@ public class ResourceRouter extends Router
     {
         return path.startsWith(resPath);
     }
+
 }

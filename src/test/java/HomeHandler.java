@@ -2,17 +2,14 @@ import org.jeff.jsw.TemplateEngine;
 import org.jeff.web.Request;
 import org.jeff.web.handlers.RequestHandler;
 import org.jeff.web.response.Response;
-import org.jeff.web.response.ResponseBuilder;
-import org.jeff.web.router.Router;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 
 public class HomeHandler extends RequestHandler
 {
-    public Response get(Request request, Router router)
+    public void get(Request request, Response response)
     {
-        Response response = ResponseBuilder.build(200);
         response.set_header("Content-Type", "text/html; charset=UTF-8");
         HashMap<String, Object> user = new HashMap<>();
         user.put("a", "xxx");
@@ -26,6 +23,5 @@ public class HomeHandler extends RequestHandler
         TemplateEngine engine = new TemplateEngine();
         String temp = engine.render("src/test/static/index.html", vars);
         response.write(temp);
-        return response;
     }
 }
