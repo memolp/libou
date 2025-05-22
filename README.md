@@ -57,7 +57,7 @@ Transfer/sec:      2.04MB
 2. 很多场景下都无法利用keep-alive，这样其实TPS并不是特别高。
 3. 以上的全部测试网络线程数开的是4个，也是4个线程去处理请求。
 ```shell
-./wrk -c 10 -t 2 -d 60http://172.0.0.1/
+./wrk -c 10 -t 2 -d 60 http://172.0.0.1/
 Running 1m test @ http://172.0.0.1/
   2 threads and 10 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
