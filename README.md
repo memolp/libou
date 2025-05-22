@@ -1,6 +1,30 @@
 # libou
 一个简单的Java版本的HTTP服务，网络采用AIO模型。内部写了一个模板脚本语言还没完全完成。<br>
 
+# 快速开始
+### 创建请求处理类
+```java
+// 请求处理类 注意不能作为内部类
+public class IndexHandler extends RequestHandler
+{
+    @Override
+    public void get(Request request, Response response)
+    {
+        response.write("Hello, World!");
+    }
+}
+```
+### 启动HTTP服务
+```java
+public static void main(String[] args) throws Exception
+{
+    Application app = new Application();
+    app.router.add_route("/", IndexHandler.class);  // http://127.0.0.1:8080/ => 自动使用IndexHandler处理
+    app.router.add_static("/static/", "src/test/static");  // http://127.0.0.1:8080/static/xxx 相关的静态资源请求
+    app.start("0.0.0.0", 8080);
+}
+```
+
 # 性能测试
 客户端Channel未设置TCP_NODELAY
 ```shell
