@@ -16,7 +16,7 @@ public class LiteralExpr implements Expression
         this.value = value;
     }
 
-    public JsObject eval(JsContext jsContext) {
+    public JsObject eval(JsContext context) {
         return value;
     }
 

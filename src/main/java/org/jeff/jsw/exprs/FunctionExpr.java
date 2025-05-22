@@ -19,7 +19,7 @@ public class FunctionExpr implements Expression
     }
 
     @Override
-    public JsObject eval(JsContext jsContext)
+    public JsObject eval(JsContext context)
     {
         return new JsFunction("", this);
     }

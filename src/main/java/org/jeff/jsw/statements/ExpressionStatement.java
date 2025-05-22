@@ -13,9 +13,9 @@ public class ExpressionStatement implements Statement
     }
 
     @Override
-    public JsObject execute(JsContext jsContext)
+    public JsObject execute(JsContext context)
     {
-        return expression.eval(jsContext);
+        return expression.eval(context);
     }
 
     @Override

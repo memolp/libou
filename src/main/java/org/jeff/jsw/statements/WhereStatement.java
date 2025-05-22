@@ -20,9 +20,9 @@ public class WhereStatement implements Statement
         this.body = body;
     }
     @Override
-    public JsObject execute(JsContext jsContext)
+    public JsObject execute(JsContext context)
     {
-        JsContext local = new JsContext(jsContext);
+        JsContext local = new JsContext(context);
         JsObject result = JsNull.NIL;
         do {
             JsObject c = this.cond.eval(local);

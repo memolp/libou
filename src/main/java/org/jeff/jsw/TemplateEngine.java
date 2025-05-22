@@ -24,7 +24,7 @@ public class TemplateEngine extends JsEngine
         super.loadBuiltin();
         this.setFunction("echo", new JsBuiltinFunction() {
             @Override
-            public JsObject call(JsContext jsContext, JsObject... args)
+            public JsObject call(JsContext context, JsObject... args)
             {
                 if(args.length == 0) return null;
                 if(args.length == 1)

@@ -10,8 +10,8 @@ public interface Statement
 {
     /**
      * 执行语句
-     * @param jsContext
+     * @param context
      * @return
      */
-    JsObject execute(JsContext jsContext);
+    JsObject execute(JsContext context);
 }

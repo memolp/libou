@@ -4,5 +4,5 @@ import org.jeff.jsw.JsContext;
 
 public interface JsCallable extends JsObject
 {
-    JsObject call(JsContext jsContext, JsObject... args);
+    JsObject call(JsContext context, JsObject... args);
 }

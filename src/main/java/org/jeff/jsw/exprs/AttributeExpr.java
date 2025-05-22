@@ -15,10 +15,10 @@ public class AttributeExpr implements Assignable
     }
 
     @Override
-    public JsObject eval(JsContext jsContext)
+    public JsObject eval(JsContext context)
     {
-        JsObject target = this.left.eval(jsContext);
-        JsObject index = this.right.eval(jsContext);
+        JsObject target = this.left.eval(context);
+        JsObject index = this.right.eval(context);
         return JsOperator.getIndex(target, index);
     }
 

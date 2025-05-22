@@ -19,10 +19,10 @@ public class FunctionStatement implements Statement
     }
 
     @Override
-    public JsObject execute(JsContext jsContext)
+    public JsObject execute(JsContext context)
     {
         JsFunction func = new JsFunction(funcName, functionExpr);
-        jsContext.set(funcName, func);
+        context.set(funcName, func);
         return null;
     }
 

@@ -14,10 +14,10 @@ public class ReturnStatement implements Statement
         this.expression = expression;
     }
     @Override
-    public JsObject execute(JsContext jsContext)
+    public JsObject execute(JsContext context)
     {
         if(expression != null)
-            throw new ReturnException(expression.eval(jsContext));
+            throw new ReturnException(expression.eval(context));
         throw new ReturnException(JsNull.NIL);
     }
 }

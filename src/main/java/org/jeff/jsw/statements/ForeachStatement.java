@@ -22,10 +22,10 @@ public class ForeachStatement implements Statement
     }
 
     @Override
-    public JsObject execute(JsContext jsContext)
+    public JsObject execute(JsContext context)
     {
-        JsContext local = new JsContext(jsContext);
-        JsObject v = iter.eval(jsContext);
+        JsContext local = new JsContext(context);
+        JsObject v = iter.eval(context);
         if(!(v instanceof Iterable))
         {
             throw new RuntimeException("Not iterable");

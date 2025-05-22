@@ -7,7 +7,7 @@ import org.jeff.jsw.objs.JsObject;
 public class ContinueStatement implements Statement
 {
     @Override
-    public JsObject execute(JsContext jsContext)
+    public JsObject execute(JsContext context)
     {
         throw new ContinueException();
     }

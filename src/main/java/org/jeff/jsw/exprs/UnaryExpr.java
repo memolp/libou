@@ -14,9 +14,9 @@ public class UnaryExpr implements Expression
         this.expr = expr;
     }
     @Override
-    public JsObject eval(JsContext jsContext)
+    public JsObject eval(JsContext context)
     {
-        JsObject value = this.expr.eval(jsContext);
+        JsObject value = this.expr.eval(context);
         switch (this.op)
         {
             case "-": return JsOperator.neg(value);

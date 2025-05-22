@@ -22,13 +22,13 @@ public class BlockStatement implements Statement
     }
 
     @Override
-    public JsObject execute(JsContext jsContext)
+    public JsObject execute(JsContext context)
     {
         try
         {
             JsObject value = JsNull.NIL;
             for (Statement statement : statements) {
-                value = statement.execute(jsContext);
+                value = statement.execute(context);
             }
             return value;
         }catch (ReturnException e)

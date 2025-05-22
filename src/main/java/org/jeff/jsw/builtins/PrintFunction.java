@@ -10,7 +10,7 @@ import java.util.List;
 public class PrintFunction extends JsBuiltinFunction
 {
     @Override
-    public JsObject call(JsContext jsContext, JsObject... args)
+    public JsObject call(JsContext context, JsObject... args)
     {
         if(args.length == 1)
             System.out.println(args[0]);

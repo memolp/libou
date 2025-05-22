@@ -16,20 +16,20 @@ public class FunctionCallExpr implements Expression
         this.arguments = args;
     }
     @Override
-    public JsObject eval(JsContext jsContext)
+    public JsObject eval(JsContext context)
     {
-        JsObject v = funcName.eval(jsContext);
+        JsObject v = funcName.eval(context);
         if(!(v instanceof JsCallable))
             throw new RuntimeException("Undefined function: " + funcName.toString());
 
         JsObject[] arguments = new JsObject[this.arguments.size()];
         for (int i = 0; i < this.arguments.size(); i++)
         {
-            JsObject t = this.arguments.get(i).eval(jsContext);
+            JsObject t = this.arguments.get(i).eval(context);
             arguments[i] = t;
         }
         JsCallable f = (JsCallable) v;
-        return f.call(jsContext, arguments);
+        return f.call(context, arguments);
     }
 
     @Override

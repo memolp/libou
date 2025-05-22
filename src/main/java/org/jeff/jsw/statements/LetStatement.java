@@ -15,12 +15,12 @@ public class LetStatement implements Statement
         this.expr = expr;
     }
 
-    public JsObject execute(JsContext jsContext)
+    public JsObject execute(JsContext context)
     {
         if(expr != null)
-            jsContext.set(name, expr.eval(jsContext));
+            context.set(name, expr.eval(context));
         else
-            jsContext.set(name, JsNull.NIL);
+            context.set(name, JsNull.NIL);
         return null;
     }
 

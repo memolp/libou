@@ -24,16 +24,16 @@ public class IfStatement implements Statement
         this.branchs = branchs;
     }
 
-    private boolean checkCondition(JsContext jsContext)
+    private boolean checkCondition(JsContext context)
     {
         if(condition == null) return true;
-        JsObject result = condition.eval(jsContext);
+        JsObject result = condition.eval(context);
         return JsOperator.toBool(result);
     }
 
-    public JsObject execute(JsContext jsContext)
+    public JsObject execute(JsContext context)
     {
-        JsContext local = new JsContext(jsContext);
+        JsContext local = new JsContext(context);
         if(checkCondition(local))
         {
             return this.body.execute(local);
@@ -42,7 +42,7 @@ public class IfStatement implements Statement
             JsObject result = JsNull.NIL;
             for(IfStatement stmt : branchs)
             {
-                local = new JsContext(jsContext);
+                local = new JsContext(context);
                 if(stmt.checkCondition(local))
                 {
                     result = stmt.execute(local);

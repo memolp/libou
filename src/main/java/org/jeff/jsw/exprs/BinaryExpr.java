@@ -16,10 +16,10 @@ public class BinaryExpr implements Expression
         this.right = right;
     }
 
-    public JsObject eval(JsContext jsContext)
+    public JsObject eval(JsContext context)
     {
-        JsObject l = left.eval(jsContext);
-        JsObject r = right.eval(jsContext);
+        JsObject l = left.eval(context);
+        JsObject r = right.eval(context);
         switch (op)
         {
             case "+": return JsOperator.add(l, r);

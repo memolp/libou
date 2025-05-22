@@ -26,9 +26,9 @@ public class ForStatement implements Statement
     }
 
     @Override
-    public JsObject execute(JsContext jsContext)
+    public JsObject execute(JsContext context)
     {
-        JsContext local = new JsContext(jsContext);
+        JsContext local = new JsContext(context);
         init.execute(local);
         JsObject result = JsNull.NIL;
         do
