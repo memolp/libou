@@ -18,7 +18,7 @@ public class TextWriter implements IBodyWriter
     @Override
     public void onBeforeWriteHeader(Response response, HttpContext context)
     {
-        response.set_header("Content-Length", String.format("%d", this.contentLength()));
+        response.set_header("Content-Length", String.valueOf(this.contentLength()));//String.format("%d", this.contentLength()));
     }
 
     @Override

@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 public class FileChunkWriter extends FileWriter
 {
     private boolean has_next = true;
+
     public FileChunkWriter(File file)
     {
         super(file);
@@ -35,12 +36,22 @@ public class FileChunkWriter extends FileWriter
     @Override
     public void onBeforeWriteHeader(Response response, HttpContext context)
     {
-        this.mBuffSize = context.buffSize;
+        this.mBuffSize = context.fileBuffSize;
         response.set_header("Transfer-Encoding", "chunked");
         response.set_header("Content-Type", this.mMimeType);
         response.set_header("Content-Disposition", String.format("attachment; filename=%s", this.mFilename));
     }
-    private final byte[] LR = "\r\n".getBytes();
+    /** 换行的字节表达对象 */
+    private static final byte[] LR = "\r\n".getBytes();
+
+    /**
+     * 每次返回的chunk
+     * 还有数据时：
+     *    十六进制的chunk长度\r\nchunk原始数据\r\n
+     * 没有数据后:
+     *      0\r\n\r\n\r\n
+     * @return
+     */
     @Override
     public ByteBuffer nextChunk()
     {

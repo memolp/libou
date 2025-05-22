@@ -66,7 +66,7 @@ public class StaticRequestHandler extends RequestHandler
     private File getFile(Request request)
     {
         ResourceRouter resourceRouter = (ResourceRouter)this.router;
-        String path = request.path.replace(resourceRouter.resPath, "");
+        String path = request.path.replace(resourceRouter.routerPath, "");
         String filename;
         if(!path.startsWith("/"))
         {

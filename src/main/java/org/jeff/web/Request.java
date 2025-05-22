@@ -11,6 +11,7 @@ public class Request
     public String method;
     public String path;
     public String version;
+    public String RemoteAddress;
 
     public String get_header(String name)
     {

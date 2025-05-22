@@ -18,7 +18,7 @@ public class HttpServer
     public final String host;
     public final int port;
     public final HttpContext context;
-    public int ThreadNum = 4;
+
     private ExecutorService _serverThreadPool = null;
     private AsynchronousChannelGroup _serverGroup = null;
     private AsynchronousServerSocketChannel _serverChannel = null;
@@ -33,9 +33,10 @@ public class HttpServer
 
     protected void setupServer(String host, int port) throws IOException
     {
-        this._serverThreadPool = Executors.newFixedThreadPool(this.ThreadNum);
+        this._serverThreadPool = Executors.newFixedThreadPool(this.context.maxThreadNum);
         this._serverGroup = AsynchronousChannelGroup.withThreadPool(this._serverThreadPool);
         this._serverChannel = AsynchronousServerSocketChannel.open(this._serverGroup);
+        this._serverChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
         this._serverChannel.bind(new InetSocketAddress(host, port));
     }
 
@@ -69,15 +70,15 @@ public class HttpServer
 
     public void onAccept(AsynchronousSocketChannel client)
     {
-        this._serverChannel.accept(this, this._acceptHandler);
+        this.doAccept();
         try
         {
             client.setOption(StandardSocketOptions.TCP_NODELAY, true);
-        }catch (Exception e)
+            client.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
+            Session session = new Session(this.context, client);
+            session.doHandle();
+        }catch (Exception ignored)
         {
-            return;
         }
-        Session session = new Session(this.context, client);
-        session.doHandle();
     }
 }

@@ -1,5 +1,5 @@
 # libou
-
+一个简单的Java版本的HTTP服务，网络采用AIO模型。内部写了一个模板脚本语言还没完全完成。<br>
 
 # 性能测试
 客户端Channel未设置TCP_NODELAY
@@ -14,7 +14,9 @@ Running 1m test @ http://127.0.0.1/
 Requests/sec:    243.70
 Transfer/sec:     36.67KB
 ```
-正常设置TCP_NODELAY后
+正常设置TCP_NODELAY后，并且时keepAlive保持连接状态下。
+1. TPS 可以达到1.4万每秒
+2. 对于动态网站这种可以支持keep-alive的还是可以。
 ```shell
 ./wrk -c 10 -t 2 -d 60 http://172.0.0.1/
 Running 1m test @ http://127.0.0.1/
@@ -25,4 +27,19 @@ Running 1m test @ http://127.0.0.1/
   833723 requests in 1.00m, 122.45MB read
 Requests/sec:  13875.33
 Transfer/sec:      2.04MB
+```
+正常设置TCP_NODELAY后，每次请求都重新建立连接（keepAlive=false）<br>
+1. 说明每次建立连接会很耗时。3000tips/每秒
+2. 很多场景下都无法利用keep-alive，这样其实TPS并不是特别高。
+3. 以上的全部测试网络线程数开的是4个，也是4个线程去处理请求。
+```shell
+./wrk -c 10 -t 2 -d 60http://172.0.0.1/
+Running 1m test @ http://172.0.0.1/
+  2 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.71ms    3.20ms  50.08ms   86.89%
+    Req/Sec     1.68k   151.31     2.27k    84.72%
+  200616 requests in 1.00m, 32.14MB read
+Requests/sec:   3342.29
+Transfer/sec:    548.35KB
 ```

@@ -18,22 +18,22 @@ public class FileRangeWriter extends FileWriter
     public FileRangeWriter(File file, String range)
     {
         super(file);
-        this.init_range(range);
+        this.parserRequestRange(range);
     }
 
     public FileRangeWriter(File file, String range, String mineType)
     {
         super(file, mineType);
-        this.init_range(range);
+        this.parserRequestRange(range);
     }
 
     public FileRangeWriter(File file, String range, String mineType, String filename)
     {
         super(file, mineType, filename);
-        this.init_range(range);
+        this.parserRequestRange(range);
     }
-
-    private void init_range(String range)
+    /** 根据客户端的请求range进行起止位置接卸 */
+    private void parserRequestRange(String range)
     {
         String[] pairs = range.split("=", 2);
         if(pairs.length != 2) throw new IllegalArgumentException("Invalid range");
@@ -55,10 +55,15 @@ public class FileRangeWriter extends FileWriter
         }
     }
 
+    /**
+     * 发送range的头，这里检查range是否合理，不合理发送416状态给客户端
+     * @param response
+     * @param context
+     */
     @Override
     public void onBeforeWriteHeader(Response response, HttpContext context)
     {
-        this.mBuffSize = context.buffSize;
+        this.mBuffSize = context.fileBuffSize;
         long size = this.contentLength();
         if(this.start < 0 && this.end < 0)
         {
@@ -90,7 +95,7 @@ public class FileRangeWriter extends FileWriter
         response.set_header("Content-Type", this.mMimeType);
         response.set_header("Content-Length", String.format("%d", this.send_size));
         response.set_status(206);
-        this.send_chunk = true;
+        this.send_chunk = true;  // 只有标记为true才会发body过去
     }
 
     @Override

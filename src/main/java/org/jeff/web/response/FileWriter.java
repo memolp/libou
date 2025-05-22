@@ -45,7 +45,7 @@ public class FileWriter implements IBodyWriter
     @Override
     public void onBeforeWriteHeader(Response response, HttpContext context)
     {
-        this.mBuffSize = context.buffSize;
+        this.mBuffSize = context.fileBuffSize;
         response.set_header("Content-Length", String.format("%d", this.contentLength()));
         response.set_header("Content-Type", this.mMimeType);
         response.set_header("Content-Disposition", String.format("attachment; filename=%s", this.mFilename));

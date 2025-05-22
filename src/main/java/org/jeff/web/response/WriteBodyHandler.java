@@ -41,12 +41,12 @@ public class WriteBodyHandler implements CompletionHandler<Integer, ByteBuffer>
                 return;
             }
         }
-        this.session.onResponseCompleted(this.response);
+        this.session.onResponseCompleted();
     }
 
     @Override
     public void failed(Throwable exc, ByteBuffer attachment)
     {
-        this.session.onResponseFailed(this.response, exc);
+        this.session.onResponseFailed(exc);
     }
 }

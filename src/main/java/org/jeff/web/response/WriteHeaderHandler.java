@@ -12,6 +12,7 @@ public class WriteHeaderHandler implements CompletionHandler<Integer, ByteBuffer
     private final Session session;
     private final InternalResponse response;
     private final WriteBodyHandler bodyHandler;
+
     public WriteHeaderHandler(Session session, InternalResponse response, WriteBodyHandler bodyHandler)
     {
         this.session = session;
@@ -40,6 +41,6 @@ public class WriteHeaderHandler implements CompletionHandler<Integer, ByteBuffer
     @Override
     public void failed(Throwable exc, ByteBuffer attachment)
     {
-        this.session.onResponseFailed(this.response, exc);
+        this.session.onResponseFailed(exc);
     }
 }

@@ -15,26 +15,22 @@ public class InternalResponse extends Response
     {
         this.onBeforeWriteHeader(context);
         StringBuilder header = new StringBuilder();
-        header.append(String.format("%s %s\r\n", this.version, this.responseStatus));
+//        header.append(this.version).append(" ").append(this.responseStatus.code()).append(" ").append(this.responseStatus.reason()).append("\r\n");
+        header.append(String.format("%s %d %s\r\n", this.version, this.responseStatus.code(), this.responseStatus.reason()));
         for(String key : this.headers.keySet())
         {
             String value = this.headers.get(key);
             header.append(String.format("%s: %s\r\n", key, value));
-        }
-        if(!this.headers.containsKey("Connection"))
-        {
-            if(this.close_connection)
-                header.append("Connection: close\r\n");
-            else
-                header.append("Connection: keep-alive\r\n");
+//            header.append(key).append(": ").append(value).append("\r\n");
         }
         if(!this.headers.containsKey("Content-Type"))
         {
             header.append("Content-Type: text/plain; charset=UTF-8\r\n");
         }
-        if(!this.headers.containsKey("Date"))
+        for(String key : this.cookies.keySet())
         {
-            header.append(String.format("Date: %s\r\n", HttpDateHelper.formatToRFC822()));
+            header.append(String.format("Set-Cookie: %s\r\n", this.cookies.get(key)));
+//            header.append("Set-Cookie: ").append(this.cookies.get(key)).append("\r\n");
         }
         header.append("\r\n");
         return header.toString();
@@ -61,10 +57,4 @@ public class InternalResponse extends Response
         if(this.mBodyWriter == null) return false;
         return this.mBodyWriter.hasNext();
     }
-
-    public boolean keepAlive()
-    {
-        return !this.close_connection;
-    }
-
 }

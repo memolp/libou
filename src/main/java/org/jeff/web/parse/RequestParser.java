@@ -22,7 +22,7 @@ public class RequestParser
         HEADER,
         BODY,
     }
-
+    /** 解析成功后的request对象 */
     public Request request = new Request();
 
     private BinaryBuffer _cache_buffer = new BinaryBuffer(1024);
@@ -35,6 +35,12 @@ public class RequestParser
     {
     }
 
+    /**
+     * 解析HTTP请求，返回解析的结果，如果为Continue说明还有内容没有读取完，需要继续读取后继续调用此方法
+     * @param byteBuffer
+     * @return
+     * @throws RequestParseException
+     */
     public RequestParserState parser(ByteBuffer byteBuffer) throws RequestParseException
     {
         if(_state != RequestParserFSM.BODY)

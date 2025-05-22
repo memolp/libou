@@ -3,6 +3,9 @@ package org.jeff.web.response;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * HTTP响应状态枚举
+ */
 public enum ResponseStatus
 {
     Continue(100, "Continue"),
@@ -64,21 +67,15 @@ public enum ResponseStatus
     {
         return message;
     }
-
+    // 启动时加载全部的状态码用于业务快速查询
     private static final Map<Integer, ResponseStatus> RESPONSE_STATUS_MAP = new HashMap<>();
     static
     {
         for(ResponseStatus status: values()) RESPONSE_STATUS_MAP.put(status.code(), status);
     }
-
+    /** 返回知道状态码的状态枚举 */
     public static ResponseStatus fromCode(int code)
     {
         return ResponseStatus.RESPONSE_STATUS_MAP.get(code);
-    }
-
-    @Override
-    public String toString()
-    {
-        return String.format("%d %s", code, message);
     }
 }
