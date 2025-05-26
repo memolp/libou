@@ -1,4 +1,4 @@
-import org.jeff.jsw.TemplateEngine;
+import org.jeff.template.TemplateEngine;
 import org.jeff.web.Request;
 import org.jeff.web.handlers.RequestHandler;
 import org.jeff.web.response.Response;
@@ -15,13 +15,12 @@ public class HomeHandler extends RequestHandler
         user.put("a", "xxx");
         user.put("n", "121111");
         user.put("c", 1);
-        HashMap<String, Object> vars = new HashMap<>();
-        vars.put("Title", "异世界");
-        vars.put("obj", user);
-        vars.put("users", new LinkedList<>());
 
         TemplateEngine engine = new TemplateEngine();
-        String temp = engine.render("src/test/static/index.html", vars);
+        engine.setGlobal("Title", "异世界");
+//        engine.setGlobal("users", new LinkedList<>());
+//        engine.setGlobal("obj", user);
+        String temp = engine.render("src/test/static/index.html");
         response.write(temp);
     }
 }

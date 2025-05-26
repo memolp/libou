@@ -67,3 +67,39 @@ Running 1m test @ http://172.0.0.1/
 Requests/sec:   3342.29
 Transfer/sec:    548.35KB
 ```
+将wrk的Linux机器提升只4核后
+```shell
+./wrk -c 10 -t 2 -d 60  http://172.0.0.1/
+Running 1m test @  http://172.0.0.1/
+  2 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   324.44us  174.78us  10.88ms   86.26%
+    Req/Sec    13.40k     1.78k   18.87k    69.30%
+  1602798 requests in 1.00m, 264.44MB read
+Requests/sec:  26669.06
+Transfer/sec:      4.40MB
+```
+接入模板语言进行页面渲染后
+```shell
+./wrk -c 10 -t 2 -d 60 http://172.0.0.1/
+Running 1m test @ http://172.0.0.1/
+  2 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   757.33us  179.67us  14.09ms   82.25%
+    Req/Sec     6.45k   562.36     7.28k    65.56%
+  771234 requests in 1.00m, 206.68MB read
+Requests/sec:  12832.54
+Transfer/sec:      3.44MB
+```
+将模板进行缓存之后
+```shell
+./wrk -c 10 -t 2 -d 60 http://172.0.0.1/
+Running 1m test @ http://172.0.0.1/
+  2 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   511.04us    2.23ms 102.03ms   99.83%
+    Req/Sec    10.78k     1.17k   15.19k    70.94%
+  1287837 requests in 1.00m, 345.12MB read
+Requests/sec:  21428.35
+Transfer/sec:      5.74MB
+```
