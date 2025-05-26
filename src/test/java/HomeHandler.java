@@ -21,6 +21,7 @@ public class HomeHandler extends RequestHandler
 //        engine.setGlobal("users", new LinkedList<>());
 //        engine.setGlobal("obj", user);
         String temp = engine.render("src/test/static/index.html");
+//        String temp = engine.render("E:\\G-FLite\\test\\code\\TestCenterWeb\\WebContent\\login.html");
         response.write(temp);
     }
 }

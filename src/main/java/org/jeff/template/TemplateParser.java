@@ -1,8 +1,6 @@
 package org.jeff.template;
 
-import org.jeff.template.exprs.Expression;
-import org.jeff.template.exprs.ExpressionEvaluator;
-import org.jeff.template.exprs.VariableExpr;
+import org.jeff.template.exprs.*;
 import org.jeff.template.nodes.*;
 
 import java.util.Stack;
@@ -71,6 +69,7 @@ public class TemplateParser
             stack.push(block);
         }else if(stmt.startsWith("elif"))
         {
+            stack.pop();
             Expression cond = ExpressionEvaluator.build(stmt.substring(4), line);
             NodeBlock block = new NodeBlock("", line);
             NodeBranch branch = new NodeBranch(cond, block, line);
@@ -78,6 +77,7 @@ public class TemplateParser
             stack.push(block);
         }else if(stmt.startsWith("else"))
         {
+            stack.pop();
             NodeBlock block = new NodeBlock("", line);
             NodeBranch branch = new NodeBranch(null, block, line);
             addNode(branch, stack);
@@ -119,7 +119,16 @@ public class TemplateParser
         {
             Expression expr = ExpressionEvaluator.build(stmt.substring(3), line);
             addNode(new NodeExpr(expr, true, line), stack);
-        }else
+        } else if(stmt.equals("break"))
+        {
+            Expression expr = new BreakExpr();
+            addNode(new NodeExpr(expr, true, line), stack);
+        }else if(stmt.equals("continue"))
+        {
+            Expression expr = new ContinueExpr();
+            addNode(new NodeExpr(expr, true, line), stack);
+        }
+        else
         {
             throw new RuntimeException("unexpected code in line:" + line);
         }

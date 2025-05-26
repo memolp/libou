@@ -144,6 +144,10 @@ public class ExpressionParser
                 return this.parseMapExpression();
             case LBRACKET:  // [
                 return this.parseListExpression();
+            case KEY_BREAK:
+                return new BreakExpr();
+            case KEY_CONTINUE:
+                return new ContinueExpr();
             default:
                 throw new RuntimeException("unexpected token " + t.type + " at line " + t.line + ":" + t.column);
         }

@@ -10,6 +10,7 @@ public class test
         app.router.add_route("/", IndexHandler.class);
         app.router.add_route("/home", HomeHandler.class);
         app.router.add_static("/static", "src/test/static");
+        app.router.add_static("/tc/assets/", "E:\\G-FLite\\test\\code\\TestCenterWeb\\WebContent\\assets");
         app.router.add_regex("/oc/.+", FileDownloadHandler.class);
         for(int i = 0; i < args.length; i++)
         {
