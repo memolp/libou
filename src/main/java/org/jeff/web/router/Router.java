@@ -35,7 +35,7 @@ public abstract class Router implements Comparable<Router>
             method.invoke(inst, request, response);
         } catch (Exception e)
         {
-            response.set_status(500, e.getMessage());
+            response.set_status(500, e.toString());
         }
     }
 }

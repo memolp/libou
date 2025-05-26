@@ -17,7 +17,7 @@ public class HomeHandler extends RequestHandler
         user.put("c", 1);
 
         TemplateEngine engine = new TemplateEngine();
-        engine.setGlobal("Title", "异世界");
+        engine.setGlobal("title", "异世界");
 //        engine.setGlobal("users", new LinkedList<>());
 //        engine.setGlobal("obj", user);
         String temp = engine.render("src/test/static/index.html");

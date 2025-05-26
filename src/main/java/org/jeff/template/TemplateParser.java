@@ -7,16 +7,31 @@ import java.util.Stack;
 
 public class TemplateParser
 {
-    public static NodeBlock parse(String template)
+    public static CodeNode parse(String template)
     {
         return parse(template.split("\r\n"));
     }
 
-    public static NodeBlock parse(Iterable<String> lines)
+    public static CodeNode parse(Iterable<String> lines)
     {
         int line = 1;
-        NodeBlock topLevel = new NodeBlock("", line);
-        Stack<NodeBlock> stack = new Stack<>();
+        CodeNode topLevel = new CodeNode(line);
+        Stack<BlockNode> stack = new Stack<>();
+        stack.push(topLevel);
+        for(String rawLine : lines)
+        {
+            parseLine(rawLine, line, stack);
+            line ++;
+        }
+        if(stack.size() != 1) throw new RuntimeException(stack.peek().toString() + "not found {%end%}");
+        return topLevel;
+    }
+
+    public static CodeNode parse(String[] lines)
+    {
+        int line = 1;
+        CodeNode topLevel = new CodeNode(line);
+        Stack<BlockNode> stack = new Stack<>();
         stack.push(topLevel);
         for(String rawLine : lines)
         {
@@ -27,61 +42,51 @@ public class TemplateParser
         return topLevel;
     }
 
-    public static NodeBlock parse(String[] lines)
-    {
-        int line = 1;
-        NodeBlock topLevel = new NodeBlock("", line);
-        Stack<NodeBlock> stack = new Stack<>();
-        stack.push(topLevel);
-        for(String rawLine : lines)
-        {
-            parseLine(rawLine, line, stack);
-            line ++;
-        }
-        if(stack.size() != 1) throw new RuntimeException("error");
-        return topLevel;
-    }
-
-    private static void addTextNode(String text, int line, Stack<NodeBlock> stack)
+    private static void addTextNode(String text, int line, Stack<BlockNode> stack)
     {
         text = text.trim();
         if(text.isEmpty()) return;  // 过滤掉空内容
-        NodeText node = new NodeText(text, line);
+        TextNode node = new TextNode(text, line);
         addNode(node, stack);
     }
 
-    private static void addExprNode(String expr, int line, Stack<NodeBlock> stack)
+    private static void addExprNode(String expr, int line, Stack<BlockNode> stack)
     {
         if(expr.trim().isEmpty()) throw new RuntimeException("{{  }}");
         Expression expression = ExpressionEvaluator.build(expr, line);
-        NodeExpr node = new NodeExpr(expression, line);
+        ExpressionNode node = new ExpressionNode(expression, line);
         addNode(node, stack);
     }
 
-    private static void addStatementNode(String stmt, int line, Stack<NodeBlock> stack)
+    private static void addStatementNode(String stmt, int line, Stack<BlockNode> stack)
     {
         if(stmt.startsWith("if"))
         {
             Expression cond = ExpressionEvaluator.build(stmt.substring(2), line);
-            NodeBlock block = new NodeBlock("", line);
-            NodeBranch branch = new NodeBranch(cond, block, line);
+            BranchNode branch = new BranchNode(BranchNode.BRANCH_IF, cond, line);
             addNode(branch, stack);
-            stack.push(block);
+            stack.push(branch);
         }else if(stmt.startsWith("elif"))
         {
-            stack.pop();
+            BlockNode n = stack.pop();
+            if(!(n.blockType == BlockNode.CODE_IF || n.blockType == BlockNode.CODE_ELIF))
+            {
+                throw new RuntimeException(String.format("elif must after if or elif line:%d", line));
+            }
             Expression cond = ExpressionEvaluator.build(stmt.substring(4), line);
-            NodeBlock block = new NodeBlock("", line);
-            NodeBranch branch = new NodeBranch(cond, block, line);
+            BranchNode branch = new BranchNode(BranchNode.BRANCH_ELIF, cond, line);
             addNode(branch, stack);
-            stack.push(block);
+            stack.push(branch);
         }else if(stmt.startsWith("else"))
         {
-            stack.pop();
-            NodeBlock block = new NodeBlock("", line);
-            NodeBranch branch = new NodeBranch(null, block, line);
+            BlockNode n = stack.pop();
+            if(!(n.blockType == BlockNode.CODE_IF || n.blockType == BlockNode.CODE_ELIF))
+            {
+                throw new RuntimeException(String.format("else must after if or elif line:%d", line));
+            }
+            BranchNode branch = new BranchNode(BranchNode.BRANCH_ELSE,null, line);
             addNode(branch, stack);
-            stack.push(block);
+            stack.push(branch);
         }
         else if(stmt.startsWith("for"))
         {
@@ -91,10 +96,9 @@ public class TemplateParser
                 String[] parts = stmt.split("in");
                 Expression v = new VariableExpr(parts[0].trim());
                 Expression iter = ExpressionEvaluator.build(parts[1].trim(), line);
-                NodeBlock body = new NodeBlock("", line);
-                NodeForeach foreach = new NodeForeach(v, iter, body, line);
+                ForeachNode foreach = new ForeachNode(v, iter, line);
                 addNode(foreach, stack);
-                stack.push(body);
+                stack.push(foreach);
             }else
             {
                 String[] parts = stmt.split(";");
@@ -102,31 +106,32 @@ public class TemplateParser
                 Expression init = ExpressionEvaluator.build(parts[0].trim(), line);
                 Expression cond = ExpressionEvaluator.build(parts[1].trim(), line);
                 Expression update = ExpressionEvaluator.build(parts[2].trim(), line);
-                NodeBlock body = new NodeBlock("", line);
-                NodeFor forStmt = new NodeFor(init, cond, update, body, line);
+                ForNode forStmt = new ForNode(init, cond, update, line);
                 addNode(forStmt, stack);
-                stack.push(body);
+                stack.push(forStmt);
             }
         } else if(stmt.equals("end"))
         {
-            if(stack.size() ==1) throw new RuntimeException("");
+            if(stack.size() ==1) throw new RuntimeException("{%end%} unexpected at line:" + line);
             stack.pop();
         } else if(stmt.startsWith("set"))
         {
             Expression expr = ExpressionEvaluator.build(stmt.substring(3), line);
-            addNode(new NodeVariable(expr, line), stack);
+            addNode(new VariableNode(expr, line), stack);
         } else if(stmt.startsWith("raw"))
         {
             Expression expr = ExpressionEvaluator.build(stmt.substring(3), line);
-            addNode(new NodeExpr(expr, true, line), stack);
+            addNode(new ExpressionNode(expr, true, line), stack);
         } else if(stmt.equals("break"))
         {
+            // TODO 这种需要检测stack里面有没有循环
             Expression expr = new BreakExpr();
-            addNode(new NodeExpr(expr, true, line), stack);
+            addNode(new ExpressionNode(expr, true, line), stack);
         }else if(stmt.equals("continue"))
         {
+            // TODO 这种需要检测stack里面有没有循环
             Expression expr = new ContinueExpr();
-            addNode(new NodeExpr(expr, true, line), stack);
+            addNode(new ExpressionNode(expr, true, line), stack);
         }
         else
         {
@@ -134,7 +139,7 @@ public class TemplateParser
         }
     }
 
-    private static void parseLine(String rawLine, int line,  Stack<NodeBlock> stack)
+    private static void parseLine(String rawLine, int line,  Stack<BlockNode> stack)
     {
         int index = 0;
         while(index < rawLine.length())
@@ -183,7 +188,7 @@ public class TemplateParser
         //addNode(new NodeText("\r\n", line), stack);
     }
 
-    private static void addNode(Node node, Stack<NodeBlock> stack)
+    private static void addNode(Node node, Stack<BlockNode> stack)
     {
         stack.peek().addChild(node);
     }
