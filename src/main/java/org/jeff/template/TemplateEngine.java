@@ -36,6 +36,18 @@ public class TemplateEngine
             throw new RuntimeException("len function unexpected symbols " + itr);
         }
     }
+    class FunPairs implements Callable
+    {
+        @Override
+        public Object call(RenderContext context, Object... args)
+        {
+            if(args.length != 1) throw new RuntimeException("pairs function only support one param");
+            Object itr = args[0];
+            if(itr instanceof Iterable<?>) return itr;
+            if(itr instanceof Map<?,?>) return ((Map<?,?>)itr).keySet();
+            throw new RuntimeException("pairs function unexpected symbols " + itr);
+        }
+    }
     private final Map<String, Object> _globals = new HashMap<>();
     /** 缓存模板 */
     private static final Map<String, TemplateCode> TempCache = new ConcurrentHashMap<>();
@@ -60,6 +72,7 @@ public class TemplateEngine
     {
         CodeNode code = readCode(file);
         _globals.put("len", new FunLen());
+        _globals.put("pairs", new FunPairs());
         RenderContext context = new RenderContext(_globals);
         code.render(context);
         return context.getStdout();

@@ -2,7 +2,7 @@ package org.jeff.template.exprs;
 
 import org.jeff.template.RenderContext;
 
-class LiteralExpr implements Expression
+public class LiteralExpr implements Expression
 {
     private final Object literal;
 

@@ -4,6 +4,7 @@ import org.jeff.web.HttpContext;
 import org.jeff.web.Request;
 import org.jeff.web.handlers.RequestHandler;
 import org.jeff.web.response.Response;
+import org.jeff.web.utils.ExceptionUtil;
 
 import java.lang.reflect.Method;
 
@@ -35,7 +36,7 @@ public abstract class Router implements Comparable<Router>
             method.invoke(inst, request, response);
         } catch (Exception e)
         {
-            response.set_status(500, e.toString());
+            response.set_status(500, ExceptionUtil.getStackTrace(e));
         }
     }
 }

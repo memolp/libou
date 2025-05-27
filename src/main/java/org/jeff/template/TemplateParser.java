@@ -94,7 +94,7 @@ public class TemplateParser
             if(stmt.contains("in"))
             {
                 String[] parts = stmt.split("in");
-                Expression v = new VariableExpr(parts[0].trim());
+                Expression v = new LiteralExpr(parts[0].trim());  // 这里是声明的变量，不是外部的参数类型
                 Expression iter = ExpressionEvaluator.build(parts[1].trim(), line);
                 ForeachNode foreach = new ForeachNode(v, iter, line);
                 addNode(foreach, stack);
