@@ -18,6 +18,7 @@ public class ExpressionNode extends Node
     {
         super(line);
         this.expr = text;
+        // 这里默认走安全的转义，会有性能消耗，看需求可以改成默认不走转义，只有客户端强调的才执行
         this.decode = true;
     }
 
