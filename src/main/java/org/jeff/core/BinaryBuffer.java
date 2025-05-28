@@ -80,6 +80,13 @@ public class BinaryBuffer implements ReadableByteBuffer
         return 0;
     }
 
+    public void clear()
+    {
+        this._writeIndex = 0;
+        this._readIndex = 0;
+        this._readMark = -1;
+    }
+
     public int get_readIndex()
     {
         return this._readIndex;

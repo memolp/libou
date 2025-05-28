@@ -41,7 +41,7 @@ public class WriteBodyHandler implements CompletionHandler<Integer, ByteBuffer>
                 return;
             }
         }
-        this.session.onResponseCompleted();
+        this.session.onResponseCompleted(this.response);
     }
 
     @Override

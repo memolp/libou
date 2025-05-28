@@ -1,4 +1,7 @@
 import org.jeff.web.Application;
+import org.jeff.web.ws.WebSocketMessage;
+import org.jeff.web.ws.WebSocketRouter;
+import org.jeff.web.ws.WebSocketSession;
 
 
 public class test
@@ -12,6 +15,23 @@ public class test
         app.router.add_static("/static", "src/test/static");
         app.router.add_static("/tc/assets/", "E:\\G-FLite\\test\\code\\TestCenterWeb\\WebContent\\assets");
         app.router.add_regex("/oc/.+", FileDownloadHandler.class);
+        app.router.add_route(new WebSocketRouter("/ws", new WebSocketMessage()
+        {
+            @Override
+            public void onConnected(WebSocketSession session) {
+                System.out.println("onConnected:" + session.SessionID);
+            }
+
+            @Override
+            public void onDisconnected(WebSocketSession session) {
+                System.out.println("onDisconnected:" + session.SessionID);
+            }
+
+            @Override
+            public void onMessage(WebSocketSession session, int type, byte[] data) {
+                System.out.println("onMessage:" + session.SessionID + " type:" + type);
+            }
+        }));
         for(int i = 0; i < args.length; i++)
         {
             if(args[i].contains("close"))
